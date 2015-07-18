@@ -1,2 +1,2 @@
 # pixel-war
-A server/client Shooter using Twisted + Pygame
+A server/client 2D shooter using Twisted + Pygame
