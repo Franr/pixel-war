@@ -17,7 +17,7 @@ class HandlerBalas(Thread):
     def get_balas(self):
         return self.balas
 
-    def agregar_bala(self, bala):
+    def add_bullet(self, bala):
         self.balas.append(bala)
 
     def run(self):

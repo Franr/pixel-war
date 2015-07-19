@@ -32,10 +32,10 @@ class HandlerCriaturas(object):
         self.enemigos = {}
         
     def add_player(self, jugador):
-        self.jugadores[jugador.get_id()] = jugador
+        self.jugadores[jugador.get_uid()] = jugador
         
     def add_enemy(self, enemigo):
-        self.enemigos[enemigo.get_id()] = enemigo
+        self.enemigos[enemigo.get_uid()] = enemigo
         
     def get_players(self):
         return self.jugadores.values()
@@ -78,7 +78,7 @@ class Criatura(Objeto):
         self.equipo = equipo
         self.vivo = True
 
-    def get_id(self):
+    def get_uid(self):
         return self.uid
 
     def es_id(self, uid):

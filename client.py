@@ -43,7 +43,7 @@ class Juego(object):
         self.mouse.activar()
 
     def add_bullet(self, bala):
-        self.balas.agregar_bala(bala)
+        self.balas.add_bullet(bala)
 
     def set_principal(self, jugador):
         self.principal = jugador
@@ -54,6 +54,9 @@ class Juego(object):
 
     def get_bullets(self):
         return self.balas.get_balas()
+
+    def get_score(self):
+        return self.hcriat.azul, self.hcriat.rojo, self.hcriat.ronda
 
     def salir(self):
         self.on = False

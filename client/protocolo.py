@@ -1,7 +1,7 @@
 from twisted.protocols import amp
 
 from commands import (
-    ID, Move, MoveObject, SendMap, CreateObject, Login, PlayerReady, PlayerShoot, Shoot)
+    UID, Move, MoveObject, SendMap, CreateObject, Login, PlayerReady, PlayerShoot, Shoot)
 
 from bala import Bala
 from bloqueos import BloqueoDisp
@@ -23,7 +23,7 @@ class PWProtocol(amp.AMP):
         print 'team:', self.team
         self.callRemote(Login, team=self.team)
 
-    @ID.responder
+    @UID.responder
     def got_id(self, uid):
         self.my_id = uid
         print 'nuevo id:', uid
@@ -68,12 +68,12 @@ class PWProtocol(amp.AMP):
         # disparo
         jug = self.hcriat.get_creature_by_uid(uid)
         if jug:
-            self.juego.agregar_bala(Bala(uid, x, y, direction, jug.get_equipo(), self.juego))
+            self.juego.add_bullet(Bala(uid, x, y, direction, jug.get_equipo(), self.juego))
         return {'ok': 1}
 
     def disparar(self, direction):
         if not BloqueoDisp.block:
-            self.callRemote(Shoot, id=self.my_id, dir=direction)
+            self.callRemote(Shoot, uid=self.my_id, direction=direction)
             BloqueoDisp()
 
     def hit(self, uid, damage):
@@ -94,7 +94,7 @@ class PWProtocol(amp.AMP):
         self.juego.comenzar()
 
     def move(self, direction):
-        self.callRemote(Move, id=self.my_id, dir=direction)
+        self.callRemote(Move, uid=self.my_id, dir=direction)
 
         # elif accion == 'nr':
         #     # nueva ronda

@@ -71,9 +71,10 @@ class Drawer(object):
             (CONST_CENTRAR - self.you.x) * SQM, (CONST_CENTRAR - self.you.y) * SQM))
 
     def draw_score(self):
-        srf_azul = self.fuente.render(str(self.hcriat.azul) + '|', C_JUG_A)
-        srf_rojo = self.fuente.render(str(self.hcriat.rojo) + '|', C_JUG_R)
-        srf_rond = self.fuente.render(str(self.hcriat.ronda) + '|', C_NEGRO)
+        blue, red, game_round = self.game.get_score()
+        srf_azul = self.fuente.render(str(blue) + '|', C_JUG_A)
+        srf_rojo = self.fuente.render(str(red) + '|', C_JUG_R)
+        srf_rond = self.fuente.render(str(game_round) + '|', C_NEGRO)
         self.pantalla.blit(srf_azul, (P_X - srf_azul.get_width(), 0))
         self.pantalla.blit(srf_rojo, (P_X - srf_rojo.get_width(), 30))
         self.pantalla.blit(srf_rond, (P_X - srf_rond.get_width(), 60))
