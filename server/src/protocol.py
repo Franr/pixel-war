@@ -1,6 +1,6 @@
 from twisted.protocols import amp
 
-from commands import ID, Move, MoveObject, SendMap, CreateObject, Login, PlayerReady, PlayerShoot, Shoot
+from commands import UID, Move, MoveObject, SendMap, CreateObject, Login, PlayerReady, PlayerShoot, Shoot
 from server.src.handlers import HandlerBala
 
 
@@ -12,16 +12,16 @@ class PWProtocol(amp.AMP):
     #     pass
 
     @Move.responder
-    def move(self, id, dir):
-        jug = self.hcriat.getCriaturaById(id)
+    def move(self, uid, dir):
+        jug = self.hcriat.get_creature_by_uid(uid)
         if not jug:
             print 'jugador no existe'
         if not validar_dir4(dir):
             print 'direccion invalida'
 
-        if not jug.estaBloqueadoMov() and jug.estaVivo():
+        if not jug.cant_move() and jug.is_live():
             if mover_criatura(jug, self.hcriat, dir):
-                self.callRemote(MoveObject, id=id, x=jug.x, y=jug.y)
+                self.callRemote(MoveObject, uid=uid, x=jug.x, y=jug.y)
             else:
                 print 'posicion bloqueada o jugador muerto'
         return {'ok': 1}
@@ -30,21 +30,17 @@ class PWProtocol(amp.AMP):
     def login(self, team):
         print 'login on', team
         # creamos el jugador
-        mapa = self.hcriat.getMapa()
+        mapa = self.hcriat.get_map()
         pos = mapa.getAzul() if team == "a" else mapa.getRojo()
-        # no hay lugar
-        # if not pos:
-        #     print "Error: Todos los lugares ocupados."
-        #     self.enviarError(socket, 2)
 
         x, y = pos
         jugador = self.hcriat.crearJugador(x, y, team)
-        # enviamos id
-        self.callRemote(ID, id=jugador.id)
+        # enviamos uid
+        self.callRemote(UID, uid=jugador.uid)
         # enviamos mapa
         self.callRemote(SendMap, sec_map=mapa.getMapaChar())
         # creamos el jugador en todos los clientes
-        self.callRemote(CreateObject, obj_data=jugador.getDatos())
+        self.callRemote(CreateObject, obj_data=jugador.get_data())
         # despues le enviamos al nuevo cliente todos los jugadores excepto el suyo
         # players_data = [j.getDatos() for j in self.hcriat.getJugadores().values() if j != jugador]
         # self.callRemote(CreateObjects, players_data)
@@ -54,37 +50,39 @@ class PWProtocol(amp.AMP):
         return {'ok': 1}
 
     @PlayerReady.responder
-    def ready(self, id):
-        jug = self.hcriat.getCriaturaById(id)
+    def ready(self, uid):
+        jug = self.hcriat.get_creature_by_uid(uid)
         if jug:
-            jug.setListo()
+            jug.set_ready()
             return {'ok': 1}
-        self.hcriat.comenzarRonda()
+        self.hcriat.start_round()
 
     @Shoot.responder
-    def player_shoot(self, id, dir):
-        if not validar_dir8(dir):
+    def player_shoot(self, uid, direction):
+        if not validar_dir8(direction):
             return
 
-        jug = self.hcriat.getCriaturaById(id)
+        jug = self.hcriat.get_creature_by_uid(uid)
         if not jug:
             return
 
-        if jug.estaVivo() and not jug.estaBloqueadoDisp():
+        if jug.is_live() and not jug.cant_shot():
             # manejo interno
-            HandlerBala(jug, dir, self)
+            HandlerBala(jug, direction, self)
             # envio del paquete
-            self.callRemote(PlayerShoot, id=id, dir=dir, x=jug.x, y=jug.y)
+            self.callRemote(PlayerShoot, uid=uid, direction=direction, x=jug.x, y=jug.y)
         return {'ok': 1}
 
 
-class Protocolo: pass
+class Protocolo(object):
+    pass
+
 #
 #     SEPARADOR = '|'
 #
 #     ## servidor <-- cliente
 #
-#     def __init__(self, mensaje, socket, id):
+#     def __init__(self, mensaje, socket, uid):
 #         self.hcriat = HandlerCriaturas()
 #         # separamos el mensaje en un array
 #         mensaje = mensaje.split(self.SEPARADOR)
@@ -96,42 +94,13 @@ class Protocolo: pass
 #             # este paquete se recibe cuando un cliente responde al pedido de datos en el momento de efectuar la conexion
 #             equipo = mensaje[1]
 #             # creamos el jugador
-#             self.handlerCrearJugadorInicial(socket, id, equipo)
+#             self.handlerCrearJugadorInicial(socket, uid, equipo)
 #
 #         elif accion == 'ok':
-#             self.handlerJugadorListo(id, socket)
-#
-#         ## paquetes in-game
-#         elif accion == 'mv':
-#             # movimiento
-#             dir = mensaje[1]
-#             self.handlerMovimiento(id, dir)
-#
-#         elif accion == 'dp':
-#             # disparo
-#             dir = mensaje[1]
-#             self.handlerDisparo(id, dir)
-#
+#             self.handlerJugadorListo(uid, socket)
 #         elif accion == 'rr':
 #             # ressetear ronda
 #             HandlerCriaturas().restartRonda()
-#
-#          ## DEBERIA IR UN PAQUETE DE DESCONEXION ACA TAMBIEN
-#
-#         else:
-#             print "Paquete desconocido:", accion
-#
-#     ## servidor --> cliente
-#
-#     @classmethod
-#     def enviarId(self, socket, id):
-#         Enviar(socket, 'id', [id])
-#
-#     @classmethod
-#     def enviarCrearJugador(self, jugador):
-#         # para crear un jugador en todos los clientes
-#         datos = jugador.getDatos()
-#         EnviarTodos('cr', datos)
 #
 #     @classmethod
 #     def enviarCrearTodosJugadores(self, socket, excepcion):
@@ -154,13 +123,13 @@ class Protocolo: pass
     #     EnviarTodos('mv', [jugador.getId(), jugador.x, jugador.y])
 #
 #     @classmethod
-#     def enviarError(self, socket, id):
+#     def enviarError(self, socket, uid):
 #         # 1 -> movimiento imposible
 #         # 2 -> no hay posiciones libres para generar jugador
 #         Enviar(socket, 'er', [id])
 #
 #     @classmethod
-#     def enviarDisparo(self, id, dir, x, y):
+#     def enviarDisparo(self, uid, dir, x, y):
 #         EnviarTodos('dp', [id, dir, x, y])
 #
 #     @classmethod
@@ -169,12 +138,12 @@ class Protocolo: pass
 #         Enviar(socket, 'mp', [sec])
 #
 #     @classmethod
-#     def enviarEliminarCriatura(self, id):
+#     def enviarEliminarCriatura(self, uid):
 #         # este es para cuando se muere
 #         EnviarTodos('dl', [id])
 #
 #     @classmethod
-#     def enviarDesconectarCriatura(self, id):
+#     def enviarDesconectarCriatura(self, uid):
 #         # este es para cuando hace log-out
 #         EnviarTodos('dc', [id])
 #
@@ -191,15 +160,15 @@ class Protocolo: pass
 #     ## handlers paquetes recibidos
 #
 #
-#     def handlerDisparo(self, id, dir):
-#         jug = self.hcriat.getCriaturaById(id)
+#     def handlerDisparo(self, uid, dir):
+#         jug = self.hcriat.getCriaturaById(uid)
 #         if jug:
 #             if jug.estaVivo() and not jug.estaBloqueadoDisp():
 #                 if validarDir8(dir):
 #                     # manejo interno
 #                     HandlerBala(jug, dir, self)
 #                     # envio del paquete
-#                     self.enviarDisparo(id, dir, jug.x, jug.y)
+#                     self.enviarDisparo(uid, dir, jug.x, jug.y)
 #
 #
 # ## Acciones que usan el protocolo
@@ -218,7 +187,7 @@ class Protocolo: pass
 
 
 def mover_criatura(criatura, hcriat, dir):
-    x, y = criatura.getCoor()
+    x, y = criatura.get_coor()
     # next position
     if dir == 'n':
         y -= 1
@@ -229,11 +198,11 @@ def mover_criatura(criatura, hcriat, dir):
     elif dir == 'o':
         x -= 1
 
-    mapa = hcriat.getMapa()
+    mapa = hcriat.get_map()
     if mapa.posBloqueada(x, y):
         return False
 
-    if not criatura.estaVivo():
+    if not criatura.is_live():
         return False
 
     mapa.moverJugador(criatura, x, y)

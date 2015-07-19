@@ -6,7 +6,7 @@ from server.src.conexion import Conexion
 from server.src.ronda import Ronda
 
 
-class Server:
+class Server(object):
 
     def __init__(self):
         self.mapa = Mapa("mapa")

@@ -19,12 +19,11 @@ class Conexion(object):
         # id handler
         # self.hd = HandlerId()
         reactor.run()
-        print 'Server en escucha'
 
 
 class Cliente(object):
 
-    ''' Clase para manejar los sockets hijos conectados con los clientes.'''
+    """ Clase para manejar los sockets hijos conectados con los clientes."""
     
     def __init__(self, socket, direccion, id):
         self.socket = socket

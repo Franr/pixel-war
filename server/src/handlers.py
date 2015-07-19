@@ -10,22 +10,22 @@ class Singleton(type):
         cls.__instance = None
         type.__init__(cls, name, bases, dct)
  
-    def __call__(cls, *args, **kw):
+    def __call__(cls, *args, **kwargs):
         if cls.__instance is None:
-            cls.__instance = type.__call__(cls, *args,**kw)
+            cls.__instance = type.__call__(cls, *args, **kwargs)
         return cls.__instance
 
 
-class HandlerId:
+class HandlerId(object):
 
     def __init__(self):
         # el id 0 se reserva para los espacios vacios
         # el id 1 se reserva para los bloques
-        self.id = 2
+        self.uid = 2
         
     def getSiguienteId(self):
-        self.id += 1
-        return self.id
+        self.uid += 1
+        return self.uid
 
 
 class HandlerCriaturas:
@@ -51,43 +51,43 @@ class HandlerCriaturas:
 
     def desconectarJugador(self, id):
         # se llama cuando se desconecta un jugador
-        criat = self.delCriaturaById(id)
+        criat = self.del_creature_by_uid(id)
         if criat:
             self.mapa.delObjeto(criat)
             if DEBUG: print("criatura eliminada:", id)
             
-    def eliminarJugador(self, id):
+    def del_player(self, id):
         # se llama cuando se muere un jugador
-        jug = self.getCriaturaById(id)
+        jug = self.get_creature_by_uid(id)
         if jug:
             self.mapa.delObjeto(jug)
             if DEBUG: print("jugador eliminado:", id)
         
-    def delCriaturaById(self, id):
+    def del_creature_by_uid(self, id):
         if self.jugadores.has_key(id):
             return self.jugadores.pop(id)
         else:
             return None
             
-    def getCriaturaById(self, id):
+    def get_creature_by_uid(self, id):
         if self.jugadores.has_key(id):
             return self.jugadores[id]
         else:
             return None
 
-    def getJugadores(self):
+    def get_players(self):
         return self.jugadores
         
-    def getMapa(self):
+    def get_map(self):
         return self.mapa
         
-    def comenzarRonda(self):
+    def start_round(self):
         if len(self.jugadores) > 1:
             if not self.ronda.comenzada:
                 if not self.ronda.restarting:
                     self.ronda.comenzar()
                 
-    def restartJugadores(self):
+    def restart_players(self):
         self.mapa.limpiarTodo()
         nuevas_pos = []
         for j in self.jugadores.values():
@@ -95,7 +95,7 @@ class HandlerCriaturas:
             nuevas_pos.extend(self.mapa.posicionar(j))
         return nuevas_pos
         
-    def restartRonda(self):
+    def restart_round(self):
         self.ronda.restart()
 
 
@@ -103,12 +103,12 @@ class HandlerBala(threading.Thread):
 
     def __init__(self, jug, dir, prot):
         threading.Thread.__init__(self)
-        self.bala = Bala(jug.id, jug.x, jug.y, dir, jug.getEquipo())
+        self.bala = Bala(jug.uid, jug.x, jug.y, dir, jug.get_team())
         self.prot = prot
         self.hcriat = HandlerCriaturas()
-        self.mapa = self.hcriat.getMapa()
+        self.mapa = self.hcriat.get_map()
         self.jug = jug
-        self.jug.bloquearDisp()
+        self.jug.block_shot()
         self.start()
     
     def run(self):
@@ -124,16 +124,16 @@ class HandlerBala(threading.Thread):
         # recuperamos el id de lo que haya en la proxima posicion
         id = self.mapa.getIdByPos(x, y)
         # choco contra algo?
-        if id not in (0, self.bala.getId()):
+        if id not in (0, self.bala.get_uid()):
             # contra un bloque?
             if id == 1:
                 return False
             # contra una criatura?
             else:
-                c = self.hcriat.getCriaturaById(id)
+                c = self.hcriat.get_creature_by_uid(id)
                 if c:
                     # criatura del mismo equipo?
-                    if self.bala.esEquipo(c.getEquipo()):
+                    if self.bala.is_team(c.get_team()):
                         self.bala.mover()
                         return True
                     # criatura enemiga
@@ -155,9 +155,9 @@ class HandlerBala(threading.Thread):
             return True
 
 
-class MurioJugador:
+class MurioJugador(object):
 
     def __init__(self, jugador, prot):
-        hc = HandlerCriaturas()        
-        prot.enviarEliminarCriatura(jugador.getId())
-        hc.ronda.murio(jugador.getEquipo())
+        hc = HandlerCriaturas()
+        prot.enviarEliminarCriatura(jugador.get_uid())
+        hc.ronda.murio(jugador.get_team())

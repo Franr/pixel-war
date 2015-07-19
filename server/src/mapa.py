@@ -1,7 +1,7 @@
 from utils import Archivo
 
 
-class Mapa:
+class Mapa(object):
 
     ## Dividir en 2 clases:
     ## el mapa y el handler del mapa
@@ -68,10 +68,10 @@ class Mapa:
         return self.dicMapa[y, x]
 
     def setObjeto(self, objeto, x, y):
-        self.dicMapa[y, x] = objeto.getId()
+        self.dicMapa[y, x] = objeto.get_uid()
         
     def delObjeto(self, objeto):
-        x, y = objeto.getCoor()
+        x, y = objeto.get_coor()
         self.limpiarCoor(x, y)
         
     def setRojo(self, x, y):
@@ -95,19 +95,18 @@ class Mapa:
             return self.x_azul, self.y_azul
             
     def posicionar(self, jugador):
-        if jugador.getEquipo() == "a":
+        if jugador.get_equipo() == "a":
             pos = self.getAzul()
         else:
             pos = self.getRojo()
             
         if pos:
             x, y = pos
-            ax, ay = jugador.getCoor()
             self.setObjeto(jugador, x, y)
             jugador.mover(x, y)
-            return jugador.getId(), x, y
+            return jugador.get_uid(), x, y
         else:
-            print "error al ubicar", jugador.getId()
+            print "error al ubicar", jugador.get_uid()
         
     def limpiarCoor(self, x, y):
         self.dicMapa[y, x] = 0
@@ -137,7 +136,6 @@ class Mapa:
                      [-1,  0],          [1,  0],
                      [-1,  1], [0,  1], [1,  1]]
                      
-        ids = []
         for pos in cuadrante:
             nx = x + pos[0]
             ny = y + pos[1]
@@ -151,7 +149,7 @@ class Mapa:
                      [-1,  0],          [1,  0],
                      [-1,  1], [0,  1], [1,  1]]
                      
-        x, y = criatura.getCoor()
+        x, y = criatura.get_coor()
         ids = []
         for pos in cuadrante:
             id = self.getIdCriatura(x + pos[0], y + pos[1])
@@ -179,7 +177,7 @@ class Mapa:
         self.mapaChar = long_fila + filas
         
     def moverJugador(self, jugador, x, y):
-        antx, anty = jugador.getCoor()
+        antx, anty = jugador.get_coor()
         jugador.mover(x, y)
         self.limpiarCoor(antx, anty)
         self.setObjeto(jugador, x, y)

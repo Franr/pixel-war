@@ -1,9 +1,9 @@
 import os
 
 
-class Archivo:
+class Archivo(object):
 
-    ''' Lee un archivo y lo almacena como una cadena '''
+    """ Lee un archivo y lo almacena como una cadena """
 
     def __init__(self, carpeta, nombre, metodo):
 

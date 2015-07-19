@@ -1,25 +1,6 @@
-#
-#    Pixel War (Server) - Server de Juego Multiplayer Online
-#    Copyright (C) 2010 - Francisco Rivera
-#
-#    This program is free software: you can redistribute it and/or modify
-#    it under the terms of the GNU General Public License as published by
-#    the Free Software Foundation, either version 3 of the License, or
-#    (at your option) any later version.
-#
-#    This program is distributed in the hope that it will be useful,
-#    but WITHOUT ANY WARRANTY; without even the implied warranty of
-#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#    GNU General Public License for more details.
-#
-#    You should have received a copy of the GNU General Public License
-#    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-#
-
-import threading
-import time
 from handlers import HandlerCriaturas
 from protocol import Protocolo
+
 
 class SingletonRonda(type):
  
@@ -27,12 +8,12 @@ class SingletonRonda(type):
         cls.__instance = None
         type.__init__(cls, name, bases, dct)
  
-    def __call__(cls):#, *args, **kw):
+    def __call__(cls):
         if cls.__instance is None:
-            cls.__instance = type.__call__(cls)#, *args, **kw)
+            cls.__instance = type.__call__(cls)
         return cls.__instance
 
-        
+
 class Ronda:
 
     # Esta clase es SINGLETON
@@ -90,9 +71,9 @@ class Ronda:
         # contamos todos los jugadores que hay en cada equipo
         self.rojos = 0
         self.azules = 0
-        jugs = HandlerCriaturas().getJugadores().values()
+        jugs = HandlerCriaturas().get_players().values()
         for j in jugs:
-            if j.esEquipo("r"):
+            if j.es_equipo("r"):
                 self.rojos += 1
             else:
                 self.azules += 1
@@ -101,7 +82,7 @@ class Ronda:
             # una ronda tarda 3 segundos para comenzar
             print "comenzando nueva ronda en 3 segundos..."
             # acomodamos los jugadores
-            np = HandlerCriaturas().restartJugadores()
+            np = HandlerCriaturas().restart_players()
             #self.restarting = True
             #time.sleep(3)
             #self.restarting = False
