@@ -4,7 +4,7 @@ from pygame import K_UP, K_DOWN, K_LEFT, K_RIGHT, K_F1, K_ESCAPE
 from bloqueos import BloqueoMov
 
 
-class TecladoHandler:
+class TecladoHandler(object):
 
     def __init__(self, juego):
         self.juego = juego

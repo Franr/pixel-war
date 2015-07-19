@@ -4,28 +4,24 @@ from constantes import *
 from tools import Fuente
 
 
-class Pantalla:
+class Pantalla(object):
 
-    def __init__(self, hcriat, balas, srf=None):
+    def __init__(self, game, srf=None):
         pygame.init()
         self.clock = pygame.time.Clock()
-        self.dibujar = Dibujar(hcriat, balas, srf)
-        self.hcriat = hcriat
+        self.dibujar = Drawer(game, srf)
         self.activado = False
-        
+
     def activar(self):
         self.activado = True
 
     def update(self):
-        self.dibujarJuego()
+        self.draw_game()
         self.refresh()
-        
-    def salir(self):
-        pygame.quit()
-        
-    def dibujarJuego(self):
+
+    def draw_game(self):
         if self.activado:
-            self.dibujar.dibJuego()
+            self.dibujar.draw_game()
 
     def refresh(self):
         # FPS
@@ -35,47 +31,46 @@ class Pantalla:
         pygame.display.flip()
         self.clock.tick(FPS_MAX)
 
-    def setPrincipal(self, jugador):
-        self.dibujar.setPrincipal(jugador)
+    def set_principal(self, jugador):
+        self.dibujar.set_principal(jugador)
 
 
-class Dibujar:
+class Drawer(object):
 
-    ''' Clase que se encarga de dibujar el juego '''   
+    """ Clase que se encarga de dibujar el juego """
 
-    def __init__(self, hcriat, balas, srf=None):
-        self.hcriat = hcriat
-        self.balas = balas
-        if not srf:
-            self.pantalla = pygame.display.set_mode((P_X, P_Y), pygame.DOUBLEBUF)
-        else:
-            self.pantalla = srf
+    def __init__(self, game, srf=None):
+        self.game = game
+        self.pantalla = srf if srf else pygame.display.set_mode((P_X, P_Y), pygame.DOUBLEBUF)
         self.fuente = Fuente(30)
+        self.you = None
+        self.mapa = None
 
-    def setPrincipal(self, jugador):
-        self.principal = jugador
+    def set_principal(self, player):
+        self.you = player
 
-    def setMapa(self, mapa):
+    def set_map(self, mapa):
         self.mapa = mapa
 
-    def dibJuego(self):
+    def draw_game(self):
         # dibujamos el mapa
-        self.dibMapa()
+        self.draw_map()
         # dibujamos el score
-        self.dibScore()
+        self.draw_score()
         # dibujamos los jugadores
-        for j in self.hcriat.getJugadores():
-            self.dibSprite(j)
+        for j in self.game.get_players():
+            self.draw_sprite(j)
         # dibujamos las balas
-        for b in self.balas.getBalas():
-            self.dibBalas(b)
+        for b in self.game.get_bullets():
+            self.draw_bullets(b)
         # dibujamos los indicadores
 
-    def dibMapa(self):
+    def draw_map(self):
         self.pantalla.fill(C_FONDO)
-        self.pantalla.blit(self.mapa.surf, ((CONST_CENTRAR - self.principal.x) * SQM, (CONST_CENTRAR - self.principal.y)* SQM))
+        self.pantalla.blit(self.mapa.surf, (
+            (CONST_CENTRAR - self.you.x) * SQM, (CONST_CENTRAR - self.you.y) * SQM))
 
-    def dibScore(self):
+    def draw_score(self):
         srf_azul = self.fuente.render(str(self.hcriat.azul) + '|', C_JUG_A)
         srf_rojo = self.fuente.render(str(self.hcriat.rojo) + '|', C_JUG_R)
         srf_rond = self.fuente.render(str(self.hcriat.ronda) + '|', C_NEGRO)
@@ -83,28 +78,27 @@ class Dibujar:
         self.pantalla.blit(srf_rojo, (P_X - srf_rojo.get_width(), 30))
         self.pantalla.blit(srf_rond, (P_X - srf_rond.get_width(), 60))
 
-    def dibSprite(self, criatura):
-        if criatura.estaVivo():
+    def draw_sprite(self, criatura):
+        if criatura.esta_vivo():
             # calculamos las coordenadas
-            x, y = self.coorObjetoCentradas(criatura)
+            x, y = self.coor_objeto_centradas(criatura)
             # color de equipo
-            if criatura.getEquipo() == "r":
-                color = list(C_JUG_R)
-            else:
+            if criatura.get_equipo() == 1:
                 color = list(C_JUG_A)
+            else:
+                color = list(C_JUG_R)
             # dibujamos los rects
             color_t = color + [criatura.vida.get() * 255 / 100]
             rect = pygame.Rect(x, y, SQM, SQM)
             pygame.gfxdraw.box(self.pantalla, rect, color_t)
             pygame.gfxdraw.rectangle(self.pantalla, rect, color)
-            #pygame.draw.rect(self.pantalla, color, rect)
 
-    def dibBalas(self, bala):
-        x, y = self.coorObjetoCentradas(bala)
+    def draw_bullets(self, bala):
+        x, y = self.coor_objeto_centradas(bala)
         rect = pygame.Rect(x, y, SQM, SQM)
         pygame.draw.rect(self.pantalla, C_AMARILLO, rect)
 
-    def coorObjetoCentradas(self, criat):
-        x = (CONST_CENTRAR + criat.x - self.principal.x) * SQM
-        y = (CONST_CENTRAR + criat.y - self.principal.y) * SQM
+    def coor_objeto_centradas(self, criat):
+        x = (CONST_CENTRAR + criat.x - self.you.x) * SQM
+        y = (CONST_CENTRAR + criat.y - self.you.y) * SQM
         return x, y

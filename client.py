@@ -1,7 +1,7 @@
 #!/usr/bin/env python
+import pygame
 from twisted.internet.task import LoopingCall
 from twisted.internet import reactor
-import pygame
 
 from client.criaturas import HandlerCriaturas
 from client.pantalla import Pantalla
@@ -17,13 +17,13 @@ DESIRED_FPS = 30.0  # 30 frames per second
 class Juego(object):
 
     def __init__(self, host, equipo, srf=None):
-        # banderas
         self.on = True
-        # instanciamos las clases necesarias
+        self.principal = None
+        # handlers
         self.balas = HandlerBalas(self)
         self.hcriat = HandlerCriaturas()
-        self.pantalla = Pantalla(self.hcriat, self.balas, srf)
-        self.conectar(host, equipo)
+        self.pantalla = Pantalla(self, srf)
+        self.conexion = Conexion(host, self, self.hcriat, equipo)
         self.teclado = TecladoHandler(self)
         self.mouse = MouseHandler(self)
         # loop principal
@@ -42,23 +42,22 @@ class Juego(object):
         self.teclado.activar()
         self.mouse.activar()
 
-    def agregarBala(self, bala):
-        self.balas.agregarBala(bala)
+    def add_bullet(self, bala):
+        self.balas.agregar_bala(bala)
 
-    def setPrincipal(self, jugador):
+    def set_principal(self, jugador):
         self.principal = jugador
-        self.pantalla.setPrincipal(jugador)
+        self.pantalla.set_principal(jugador)
 
-    def conectar(self, host, equipo):
-        self.conexion = Conexion(host, self, self.hcriat, equipo)
-        # no nos pudimos conectar
-        # else:
-        #     self.login.error_conexion()
-        #     self.salir()
+    def get_players(self):
+        return self.hcriat.get_players()
+
+    def get_bullets(self):
+        return self.balas.get_balas()
 
     def salir(self):
         self.on = False
-        self.pantalla.salir()
+        pygame.quit()
         reactor.stop()
 
 

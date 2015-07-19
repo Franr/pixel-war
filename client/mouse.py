@@ -4,9 +4,12 @@ import pygame
 
 from constantes import P_X, P_Y
 
+C_X = P_X/2
+C_Y = P_Y/2
 
-def esta_entre(n, nm, nM):
-    return (n >= nm) and (n < nM)
+
+def esta_entre(n, menor, mayor):
+    return (n >= menor) and (n < mayor)
 
 
 def angulo_to_dir(ang):
@@ -31,29 +34,22 @@ def angulo_to_dir(ang):
     else:
         print "error"
 
-C_X = P_X/2
-C_Y = P_Y/2
 
-
-class Mouse:
+class Mouse(object):
 
     def __init__(self):
         self.mouse = pygame.mouse
-    
-    def getAngulo(self):
-        ''' Devuelve el angulo que se forma entre la posicion del mouse y el centro de la pantalla. '''
-        angulo = self.getRawAngulo()
-        return int(angulo)
-        
-    def getRawAngulo(self):
+
+    def get_angle(self):
+        """Return the angle between the mouse position and the center of the screen."""
         mx, my = self.mouse.get_pos()
-        angulo = math.degrees(math.atan2((mx - C_X), (my - C_Y)))
-        if angulo < 0:
-            angulo += 360
-        return angulo
+        angle = math.degrees(math.atan2((mx - C_X), (my - C_Y)))
+        if angle < 0:
+            angle += 360
+        return int(angle)
 
 
-class MouseHandler:
+class MouseHandler(object):
 
     def __init__(self, juego):
         self.juego = juego
@@ -68,6 +64,6 @@ class MouseHandler:
         if not clicks[0]:
             return
 
-        dir = angulo_to_dir(self.mouse.getAngulo())
+        direction = angulo_to_dir(self.mouse.get_angle())
         if self.enabled:
-            self.juego.conexion.cf.protocol.disparar(dir)
+            self.juego.conexion.cf.protocol.disparar(direction)

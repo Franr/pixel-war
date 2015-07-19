@@ -2,9 +2,9 @@ import os
 import pygame
 
 
-class Archivo:
+class Archivo(object):
 
-    ''' Lee un archivo y lo almacena como una cadena '''
+    """ Lee un archivo y lo almacena como una cadena """
 
     def __init__(self, nombre):    
         # Nos posicionamos en la carpeta correspondiente
@@ -24,7 +24,7 @@ class Archivo:
         print 'Archivo:', nombre, 'cargado con exito.'
 
 
-class ArchivoEditable:
+class ArchivoEditable(object):
 
     def __init__(self, carpeta, nombre):
         # nos posicionamos en la carpeta correspondiente
@@ -39,19 +39,15 @@ class ArchivoEditable:
         self.archivo.close()
 
 
-class Fuente:
+class Fuente(object):
 
     def __init__(self, size):
         pygame.font.init()
         self.size = size
         self.nombre = "cubicfive10.ttf"
-        self.cargar()
-        
-    def render(self, texto, color):
-        ''' Devuelve un surface con el texto y color indicado '''
-        return self.fuente.render(texto, False, color)
-        
-    def cargar(self):    
         ruta = os.path.join("client", self.nombre)
-        # creamos la fuente
         self.fuente = pygame.font.Font(ruta, self.size)
+
+    def render(self, texto, color):
+        """ Devuelve un surface con el texto y color indicado """
+        return self.fuente.render(texto, False, color)

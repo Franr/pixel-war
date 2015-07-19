@@ -1,6 +1,7 @@
 from twisted.protocols import amp
 
-from commands import ID, Move, MoveObject, SendMap, CreateObject, Login, PlayerReady, PlayerShoot, Shoot
+from commands import (
+    ID, Move, MoveObject, SendMap, CreateObject, Login, PlayerReady, PlayerShoot, Shoot)
 
 from bala import Bala
 from bloqueos import BloqueoDisp
@@ -15,6 +16,7 @@ class PWProtocol(amp.AMP):
         self.juego = juego
         self.hcriat = hcriat
         self.team = team
+        self.mapa = None
         self.my_id = None
 
     def connectionMade(self):
@@ -22,77 +24,77 @@ class PWProtocol(amp.AMP):
         self.callRemote(Login, team=self.team)
 
     @ID.responder
-    def got_id(self, id):
-        self.my_id = id
-        print 'nuevo id:', id
+    def got_id(self, uid):
+        self.my_id = uid
+        print 'nuevo id:', uid
         self.juego.comenzar()
         return {'ok': 1}
 
     @CreateObject.responder
     def create_object(self, obj_data):
-        id, equipo, x, y, vida, vida_max = obj_data
-        if self.my_id and id == self.my_id:
-            j = Principal(id, x, y, vida, vida_max, equipo)
-            self.juego.setPrincipal(j)
+        uid, equipo, x, y, vida, vida_max = obj_data
+        if self.my_id and uid == self.my_id:
+            j = Principal(uid, x, y, vida, vida_max, equipo)
+            self.juego.set_principal(j)
         else:
-            j = Jugador(id, x, y, vida, vida_max, equipo)
-        self.hcriat.addJugador(j)
-        self.mapa.setCriatura(j, j.x, j.y)
-        print 'jugador creado:', id, "en:", x, y
+            j = Jugador(uid, x, y, vida, vida_max, equipo)
+        self.hcriat.add_player(j)
+        self.mapa.set_creature(j, j.x, j.y)
+        print 'jugador creado:', uid, "en:", x, y
         return {'ok': 1}
 
-    def create_objects(self, list):
-        for args in list:
+    def create_objects(self, args_list):
+        for args in args_list:
             self.create_object(*args)
 
     @SendMap.responder
     def send_map(self, sec_map):
         # receiving map on client
         self.mapa = Mapa(sec_map)
-        self.juego.pantalla.dibujar.setMapa(self.mapa)
+        self.juego.pantalla.dibujar.set_map(self.mapa)
         return {'ok': 1}
 
     @MoveObject.responder
-    def move_object(self, id, x, y):
+    def move_object(self, uid, x, y):
         # movemos el objeto
-        criat = self.hcriat.getCriaturaById(id)
+        criat = self.hcriat.get_creature_by_uid(uid)
         if criat:
-            self.mapa.moverCriatura(criat, x, y)
+            self.mapa.move_creature(criat, x, y)
             criat.mover(x, y)
         return {'ok': 1}
 
     @PlayerShoot.responder
-    def player_shoot(self, id, dir, x, y):
+    def player_shoot(self, uid, direction, x, y):
         # disparo
-        jug = self.hcriat.getCriaturaById(id)
+        jug = self.hcriat.get_creature_by_uid(uid)
         if jug:
-            self.juego.agregarBala(Bala(id, x, y, dir, jug.getEquipo(), self.juego))
+            self.juego.agregar_bala(Bala(uid, x, y, direction, jug.get_equipo(), self.juego))
         return {'ok': 1}
 
-    def disparar(self, dir):
+    def disparar(self, direction):
         if not BloqueoDisp.block:
-            self.callRemote(Shoot, id=self.my_id, dir=dir)
+            self.callRemote(Shoot, id=self.my_id, dir=direction)
             BloqueoDisp()
 
-    def hit(self, id, damage):
+    def hit(self, uid, damage):
         # hit
-        jugador = self.hcriat.getCriaturaById(id)
+        jugador = self.hcriat.get_creature_by_uid(uid)
         if jugador:
             jugador.hit(damage)
 
-    def logout(self, id):
+    def logout(self, uid):
         # desconectar
-        jug = self.hcriat.getCriaturaById(id)
+        jug = self.hcriat.get_creature_by_uid(uid)
         if jug:
-            self.mapa.limpiarPos(jug.x, jug.y)
-            self.hcriat.delCriaturaById(id)
+            self.mapa.clean_position(jug.x, jug.y)
+            self.hcriat.del_creature_by_id(uid)
 
     def ready(self):
         self.callRemote(PlayerReady, self.my_id)
         self.juego.comenzar()
 
-    def move(self, dir):
-        self.callRemote(Move, id=self.my_id, dir=dir)
+    def move(self, direction):
+        self.callRemote(Move, id=self.my_id, dir=direction)
 
         # elif accion == 'nr':
         #     # nueva ronda

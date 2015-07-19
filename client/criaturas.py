@@ -1,28 +1,28 @@
 import pygame
 
 
-class Objeto:
+class Objeto(object):
 
     def __init__(self, x, y):
         self.x = x
         self.y = y
-        self.rect = self.getRect()
-        
-    def getCoor(self):
+        self.rect = self.get_rect()
+
+    def get_coor(self):
         return self.x, self.y
-        
-    def getRect(self):
+
+    def get_rect(self):
         return pygame.Rect(self.x, self.y, 7, 7)
-        
+
     def update(self, x, y):
         self.x = x
-        self.y = y        
-    
+        self.y = y
+
     def colisiona(self, rects):
         return self.rect.collidelist(rects) != -1
 
 
-class HandlerCriaturas:
+class HandlerCriaturas(object):
 
     def __init__(self):
         self.azul = 0
@@ -31,39 +31,39 @@ class HandlerCriaturas:
         self.jugadores = {}
         self.enemigos = {}
         
-    def addJugador(self, jugador):
-        self.jugadores[jugador.getId()] = jugador
+    def add_player(self, jugador):
+        self.jugadores[jugador.get_id()] = jugador
         
-    def addEnemigo(self, enemigo):
-        self.enemigos[enemigo.getId()] = enemigo
+    def add_enemy(self, enemigo):
+        self.enemigos[enemigo.get_id()] = enemigo
         
-    def getJugadores(self):
+    def get_players(self):
         return self.jugadores.values()
         
-    def getEnemigos(self):
+    def get_enemies(self):
         return self.enemigos.values()
               
-    def getCriaturaById(self, id):
-        if self.jugadores.has_key(id):
-            return self.jugadores[id]
-        elif self.enemigos.has_key(id):
-            return self.enemigos[id]
+    def get_creature_by_uid(self, uid):
+        if uid in self.jugadores:
+            return self.jugadores[uid]
+        elif uid in self.enemigos:
+            return self.enemigos[uid]
         else:
-            print("Id invalida:" + str(id))
+            print("Id invalida:" + str(uid))
             return None
 
-    def delCriaturaById(self, id):
-        if self.jugadores.has_key(id):
-            self.jugadores.pop(id)
-        elif self.enemigos.has_key(id):
-            self.enemigos.pop(id)
+    def del_creature_by_id(self, uid):
+        if uid in self.jugadores:
+            self.jugadores.pop(uid)
+        elif uid in self.enemigos:
+            self.enemigos.pop(uid)
         else:
-            print("Id invalida:" + str(id))
+            print("Id invalida:" + str(uid))
 
-    def resetTodos(self):
+    def reset_all(self):
         [j.reset() for j in self.jugadores.values()]
-        
-    def setScore(self, azul, rojo, ronda):
+
+    def set_score(self, azul, rojo, ronda):
         self.azul = azul
         self.rojo = rojo
         self.ronda = ronda
@@ -71,78 +71,78 @@ class HandlerCriaturas:
 
 class Criatura(Objeto):
 
-    def __init__(self, id, x, y, vida, vida_max, equipo):
+    def __init__(self, uid, x, y, vida, vida_max, equipo):
         Objeto.__init__(self, x, y)
-        self.id = id
+        self.uid = uid
         self.vida = Vida(vida, vida_max)
         self.equipo = equipo
         self.vivo = True
-        
-    def getId(self):
-        return self.id
-        
-    def esId(self, id):
-        return self.id == id
-        
-    def getEquipo(self):
+
+    def get_id(self):
+        return self.uid
+
+    def es_id(self, uid):
+        return self.uid == uid
+
+    def get_equipo(self):
         return self.equipo
-        
-    def esEquipo(self, equipo):
+
+    def es_equipo(self, equipo):
         return self.equipo == equipo
-        
-    def getVida(self):
+
+    def get_vida(self):
         return self.vida.get()
-        
+
     def reset(self):
         self.vivo = True
         self.vida.llenar()
-        
-    def esPrincipal(self):
+
+    def es_principal(self):
         return False
-        
-    def estaVivo(self):
+
+    def esta_vivo(self):
         return self.vivo
-        
-    def hit(self, danio):   
+
+    def hit(self, danio):
         self.vida.hit(danio)
-        
+
     def mover(self, x, y):
-        self.update(x, y)        
-        
+        self.update(x, y)
+
     def matar(self):
         self.vivo = False
 
 
-class Jugador(Criatura):      
-    
-    def __init__(self, id, x, y, vida, vida_max, equipo):
-        Criatura.__init__(self, id, x, y, vida, vida_max, equipo)        
-        
-        
+class Jugador(Criatura):
+
+    def __init__(self, uid, x, y, vida, vida_max, equipo):
+        Criatura.__init__(self, uid, x, y, vida, vida_max, equipo)
+
+
 class Principal(Jugador):
-    ''' Esta clase se utiliza para el jugador que esta siendo directamente usado por el cliente. '''
-    
-    def __init__(self, id, x, y, vida, vida_max, equipo):
-        Jugador.__init__(self, id, x, y, vida, vida_max, equipo)
-        
-    def esPrincipal(self):
+    """ Esta clase se utiliza para el jugador que esta siendo directamente usado por el cliente. """
+
+    def __init__(self, uid, x, y, vida, vida_max, equipo):
+        Jugador.__init__(self, uid, x, y, vida, vida_max, equipo)
+
+    def es_principal(self):
         return True
 
 
-class Vida:
-    
-    def __init__(self, vida, max):
-        self.max = max
-        self.actual = vida
-        
+class Vida(object):
+
+    def __init__(self, hp, max_hp):
+        self.max = max_hp
+        self.actual = hp
+
     def hit(self, cant):
         if self.actual - cant <= 0:
             self.actual = 0
         else:
             self.actual -= cant
-        
+
     def llenar(self):
         self.actual = self.max
-        
+
     def get(self):
         return self.actual
