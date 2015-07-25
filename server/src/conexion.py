@@ -5,19 +5,23 @@ from protocol import PWProtocol
 from handlers import HandlerCriaturas
 
 
+class MultiEchoFactory(Factory):
+    def __init__(self):
+        self.echoers = []
+
+    def buildProtocol(self, addr):
+        return PWProtocol(self)
+
+
 class Conexion(object):
 
     PORT = 20000
     MAX_CONEXIONES = 20
 
     def __init__(self, mapa, hcriat):
-        pf = Factory()
         PWProtocol.mapa = mapa
         PWProtocol.hcriat = hcriat
-        pf.protocol = PWProtocol
-        reactor.listenTCP(self.PORT, pf)
-        # id handler
-        # self.hd = HandlerId()
+        reactor.listenTCP(self.PORT, MultiEchoFactory())
         reactor.run()
 
 

@@ -65,4 +65,5 @@ class Juego(object):
 
 
 if __name__ == '__main__':
-    Juego('127.0.0.1', 1)
+    team = input('1 - blue ; 2 - red\n')
+    Juego('127.0.0.1', team)

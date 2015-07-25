@@ -55,25 +55,19 @@ class HandlerCriaturas:
         if criat:
             self.mapa.delObjeto(criat)
             if DEBUG: print("criatura eliminada:", id)
-            
-    def del_player(self, id):
+
+    def del_player(self, uid):
         # se llama cuando se muere un jugador
-        jug = self.get_creature_by_uid(id)
+        jug = self.get_creature_by_uid(uid)
         if jug:
             self.mapa.delObjeto(jug)
-            if DEBUG: print("jugador eliminado:", id)
-        
-    def del_creature_by_uid(self, id):
-        if self.jugadores.has_key(id):
-            return self.jugadores.pop(id)
-        else:
-            return None
-            
-    def get_creature_by_uid(self, id):
-        if self.jugadores.has_key(id):
-            return self.jugadores[id]
-        else:
-            return None
+            if DEBUG: print("jugador eliminado:", uid)
+
+    def del_creature_by_uid(self, uid):
+        return self.jugadores.pop(uid, None)
+
+    def get_creature_by_uid(self, uid):
+        return self.jugadores.get(uid, None)
 
     def get_players(self):
         return self.jugadores
@@ -122,37 +116,34 @@ class HandlerBala(threading.Thread):
         x = self.bala.x + self.bala.dx
         y = self.bala.y + self.bala.dy
         # recuperamos el id de lo que haya en la proxima posicion
-        id = self.mapa.getIdByPos(x, y)
-        # choco contra algo?
-        if id not in (0, self.bala.get_uid()):
-            # contra un bloque?
-            if id == 1:
-                return False
-            # contra una criatura?
-            else:
-                c = self.hcriat.get_creature_by_uid(id)
-                if c:
-                    # criatura del mismo equipo?
-                    if self.bala.is_team(c.get_team()):
-                        self.bala.mover()
-                        return True
-                    # criatura enemiga
-                    else:
-                        # atacamos
-                        if c.estaVivo():
-                            if c.hit(self.bala.DMG):
-                                MurioJugador(c, self.prot)
-                            else:
-                                self.prot.enviarHit(c, self.bala.DMG)
-                        return False
-                else:
-                    # error
-                    return False
-        # no choco o choco contra su propio duenio
-        else:
-            # seguimos
+        mid = self.mapa.getIdByPos(x, y)  # mid = map id
+
+        # hit nothing or its owner
+        if mid in (0, self.bala.get_uid()):
             self.bala.mover()
             return True
+
+        # hit a block
+        if mid == 1:
+            return False
+        else:
+            # hit a creature
+            c = self.hcriat.get_creature_by_uid(mid)
+            if not c:
+                return False
+
+            # same team
+            if self.bala.is_team(c.get_team()):
+                self.bala.mover()
+                return True
+            # enemy
+            else:
+                if c.is_live():
+                    if c.hit(self.bala.DMG):
+                        MurioJugador(c, self.prot)
+                    else:
+                        self.prot.hit(mid, self.bala.DMG)
+                return False
 
 
 class MurioJugador(object):

@@ -12,7 +12,7 @@ class Objeto(object):
     def get_coor(self):
         return self.x, self.y
 
-    def setCoor(self, x, y):
+    def set_coor(self, x, y):
         self.x = x
         self.y = y
 
@@ -34,9 +34,10 @@ class Criatura(Objeto):
         self.vivo = True
         self.envenenado = False
         self.hcriat = hcriat
+        self.equipo = 0
         
     def mover(self, x, y):
-        self.setCoor(x, y)
+        self.set_coor(x, y)
         
     def is_live(self):
         return self.vivo
@@ -44,7 +45,7 @@ class Criatura(Objeto):
     def get_team(self):
         return self.equipo
 
-    def esEquipo(self, equipo):
+    def is_team(self, equipo):
         return self.equipo == equipo
 
     def hit(self, danio):
@@ -118,10 +119,10 @@ class Bala(Objeto):
         self.dy = 0
         for d in dir:
             self.calc_desplazamiento(d)
-        
+
     def is_team(self, equipo):
         return self.equipo == equipo
-        
+
     def calc_desplazamiento(self, dir):
         if dir == 'n':
             self.dy = -1
@@ -131,6 +132,6 @@ class Bala(Objeto):
             self.dx = 1
         elif dir == 'o':
             self.dx = -1
-        
-    def mover(self):    
-        self.setCoor(self.x + self.dx, self.y + self.dy)
+
+    def mover(self):
+        self.set_coor(self.x + self.dx, self.y + self.dy)

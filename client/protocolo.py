@@ -1,11 +1,12 @@
 from twisted.protocols import amp
 
 from commands import (
-    UID, Move, MoveObject, SendMap, CreateObject, Login, PlayerReady, PlayerShoot, Shoot)
+    Move, MoveObject, SendMap, CreateObject, CreateObjects, Login, PlayerReady, PlayerShoot, Shoot,
+    PlayerHit)
 
 from bala import Bala
 from bloqueos import BloqueoDisp
-from criaturas import Jugador, Principal
+from criaturas import Jugador
 from mapa import Mapa
 
 
@@ -17,35 +18,34 @@ class PWProtocol(amp.AMP):
         self.hcriat = hcriat
         self.team = team
         self.mapa = None
-        self.my_id = None
+        self.my_uid = None
 
     def connectionMade(self):
         print 'team:', self.team
-        self.callRemote(Login, team=self.team)
+        self.callRemote(Login, team=self.team).addCallback(self.set_main_player)
 
-    @UID.responder
-    def got_id(self, uid):
-        self.my_id = uid
-        print 'nuevo id:', uid
+    def set_main_player(self, result):
+        self.my_uid = result['uid']
+        print 'tu id:', self.my_uid
+        principal = self.hcriat.get_creature_by_uid(self.my_uid)
+        principal.es_principal = True
+        self.juego.set_principal(principal)
         self.juego.comenzar()
-        return {'ok': 1}
 
     @CreateObject.responder
     def create_object(self, obj_data):
         uid, equipo, x, y, vida, vida_max = obj_data
-        if self.my_id and uid == self.my_id:
-            j = Principal(uid, x, y, vida, vida_max, equipo)
-            self.juego.set_principal(j)
-        else:
-            j = Jugador(uid, x, y, vida, vida_max, equipo)
-        self.hcriat.add_player(j)
-        self.mapa.set_creature(j, j.x, j.y)
+        player = Jugador(uid, x, y, vida, vida_max, equipo)
+        self.hcriat.add_player(player)
+        self.mapa.set_creature(player, player.x, player.y)
         print 'jugador creado:', uid, "en:", x, y
         return {'ok': 1}
 
-    def create_objects(self, args_list):
-        for args in args_list:
-            self.create_object(*args)
+    @CreateObjects.responder
+    def create_objects(self, obj_data):
+        for player_data in obj_data:
+            self.create_object(player_data)
+        return {'ok': 1}
 
     @SendMap.responder
     def send_map(self, sec_map):
@@ -71,16 +71,17 @@ class PWProtocol(amp.AMP):
             self.juego.add_bullet(Bala(uid, x, y, direction, jug.get_equipo(), self.juego))
         return {'ok': 1}
 
-    def disparar(self, direction):
-        if not BloqueoDisp.block:
-            self.callRemote(Shoot, uid=self.my_id, direction=direction)
-            BloqueoDisp()
-
-    def hit(self, uid, damage):
-        # hit
+    @PlayerHit.responder
+    def hit(self, uid, dmg):
         jugador = self.hcriat.get_creature_by_uid(uid)
         if jugador:
-            jugador.hit(damage)
+            jugador.hit(dmg)
+        return {'ok': 1}
+
+    def disparar(self, direction):
+        if not BloqueoDisp.block:
+            self.callRemote(Shoot, uid=self.my_uid, direction=direction)
+            BloqueoDisp()
 
     def logout(self, uid):
         # desconectar
@@ -90,11 +91,11 @@ class PWProtocol(amp.AMP):
             self.hcriat.del_creature_by_id(uid)
 
     def ready(self):
-        self.callRemote(PlayerReady, self.my_id)
+        self.callRemote(PlayerReady, self.my_uid)
         self.juego.comenzar()
 
     def move(self, direction):
-        self.callRemote(Move, uid=self.my_id, dir=direction)
+        self.callRemote(Move, uid=self.my_uid, dir=direction)
 
         # elif accion == 'nr':
         #     # nueva ronda

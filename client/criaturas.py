@@ -30,7 +30,7 @@ class HandlerCriaturas(object):
         self.ronda = 0
         self.jugadores = {}
         self.enemigos = {}
-        
+
     def add_player(self, jugador):
         self.jugadores[jugador.get_uid()] = jugador
         
@@ -117,16 +117,10 @@ class Jugador(Criatura):
 
     def __init__(self, uid, x, y, vida, vida_max, equipo):
         Criatura.__init__(self, uid, x, y, vida, vida_max, equipo)
-
-
-class Principal(Jugador):
-    """ Esta clase se utiliza para el jugador que esta siendo directamente usado por el cliente. """
-
-    def __init__(self, uid, x, y, vida, vida_max, equipo):
-        Jugador.__init__(self, uid, x, y, vida, vida_max, equipo)
+        self.es_principal = False
 
     def es_principal(self):
-        return True
+        return self.es_principal
 
 
 class Vida(object):

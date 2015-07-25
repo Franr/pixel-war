@@ -29,9 +29,14 @@ class CreateObject(Command):
     response = [('ok', Integer())]
 
 
+class CreateObjects(Command):
+    arguments = [('obj_data', ListOf(ListOf(Integer())))]
+    response = [('ok', Integer())]
+
+
 class Login(Command):
     arguments = [('team', Integer())]
-    response = [('ok', Integer())]
+    response = [('uid', Integer())]
 
 
 class PlayerReady(Command):
@@ -45,6 +50,12 @@ class PlayerShoot(Command):
                  ('direction', String()),
                  ('x', Integer()),
                  ('y', Integer())]
+    response = [('ok', Integer())]
+
+
+class PlayerHit(Command):
+    arguments = [('uid', Integer()),
+                 ('dmg', Integer())]
     response = [('ok', Integer())]
 
 
