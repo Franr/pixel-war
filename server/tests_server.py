@@ -61,7 +61,7 @@ class ActionsTest(unittest.TestCase):
         player, others, map = create_player(1, self.hcriat)
         player, shoot_handler = shoot_action(player.get_uid(), 'n', self.hcriat, None)
         before_y = shoot_handler.bala.y
-`        shoot_handler.update()
+        shoot_handler.update()
         self.assertEqual(before_y - 1, shoot_handler.bala.y)
 
     def test_shoot_hit_wall(self):
