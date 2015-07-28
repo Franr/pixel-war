@@ -90,12 +90,12 @@ class PWProtocol(amp.AMP):
             self.mapa.clean_position(jug.x, jug.y)
             self.hcriat.del_creature_by_id(uid)
 
-    def ready(self):
+    def ready(self):  # TODO: deprecated?
         self.callRemote(PlayerReady, self.my_uid)
         self.juego.comenzar()
 
     def move(self, direction):
-        self.callRemote(Move, uid=self.my_uid, dir=direction)
+        self.callRemote(Move, uid=self.my_uid, direction=direction)
 
         # elif accion == 'nr':
         #     # nueva ronda

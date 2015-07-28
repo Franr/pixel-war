@@ -3,7 +3,7 @@ from twisted.protocols.amp import Command, String, Integer, ListOf
 
 class Move(Command):
     arguments = [('uid', Integer()),
-                 ('dir', String())]
+                 ('direction', String())]
     response = [('ok', Integer())]
 
 

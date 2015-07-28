@@ -1,15 +1,16 @@
-import threading
 import time
 
+from twisted.internet import reactor
 
-class Bloqueo(threading.Thread):
+
+class Bloqueo(object):
 
     def __init__(self, tiempo):
-        threading.Thread.__init__(self)
         self.tiempo = tiempo
-        self.bloq = True
+        self.bloq = False
 
-    def run(self):
+    def block_me(self):
+        self.bloq = True
         time.sleep(self.tiempo)
         self.bloq = False
 
@@ -18,11 +19,11 @@ class BloqueoMov(Bloqueo):
 
     def __init__(self):
         Bloqueo.__init__(self, 0.15)
-        self.start()
+        reactor.callInThread(self.block_me)
 
 
 class BloqueoDisp(Bloqueo):
 
     def __init__(self):
         Bloqueo.__init__(self, 0.10)
-        self.start()
+        reactor.callInThread(self.block_me)

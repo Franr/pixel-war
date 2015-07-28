@@ -22,6 +22,7 @@ class Conexion(object):
         PWProtocol.mapa = mapa
         PWProtocol.hcriat = hcriat
         reactor.listenTCP(self.PORT, MultiEchoFactory())
+        print 'server running...'
         reactor.run()
 
 

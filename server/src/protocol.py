@@ -3,6 +3,7 @@ from twisted.protocols import amp
 from commands import (
     Move, MoveObject, SendMap, CreateObject, CreateObjects, Login, PlayerReady, PlayerShoot,
     Shoot, PlayerHit)
+import exceptions
 from server.src.handlers import HandlerBala
 
 
@@ -36,43 +37,28 @@ class PWProtocol(amp.AMP):
             echoer.callRemote(commandType, *a, **kw)
 
     @Move.responder
-    def move(self, uid, dir):
-        jug = self.hcriat.get_creature_by_uid(uid)
-        if not jug:
-            print 'jugador no existe'
-        if not validar_dir4(dir):
-            print 'direccion invalida'
-
-        if not jug.cant_move() and jug.is_live():
-            if mover_criatura(jug, self.hcriat, dir):
-                self.send_client(MoveObject, broadcast=True, uid=uid, x=jug.x, y=jug.y)
-            else:
-                print 'posicion bloqueada o jugador muerto'
+    def move(self, uid, direction):
+        try:
+            jug = move_player(uid, direction, self.hcriat)
+        except exceptions.BlockedPosition:
+            pass
+        else:
+            self.send_client(MoveObject, broadcast=True, uid=uid, x=jug.x, y=jug.y)
         return {'ok': 1}
 
     @Login.responder
     def login(self, team):
-        print 'login on', team
-        # creamos el jugador
-        mapa = self.hcriat.get_map()
-        pos = mapa.getAzul() if team == "a" else mapa.getRojo()
-
-        x, y = pos
-        jugador = self.hcriat.crearJugador(x, y, team)
-        # enviamos mapa
-        self.send_client(SendMap, sec_map=mapa.getMapaChar())
-        # creamos el jugador en todos los clientes
-        self.send_client(CreateObject, broadcast=True, obj_data=jugador.get_data())
-        # despues le enviamos al nuevo cliente todos los jugadores excepto el suyo
-        players_data = [j.get_data() for j in self.hcriat.get_players().values() if j != jugador]
-        self.send_client(CreateObjects, obj_data=players_data)
-        # y por ultimo el score de las rondas
-        # azul, rojo, ronda = self.hcriat.ronda.get()
-        # EnviarTodos('nr', [azul, rojo, ronda])
-        return {'uid': jugador.uid}
+        player, other_players, map = create_player(team, self.hcriat)
+        # map
+        self.send_client(SendMap, sec_map=map.getMapaChar())
+        # create new player on all the clients
+        self.send_client(CreateObject, broadcast=True, obj_data=player.get_data())
+        # create all the players on the new client
+        self.send_client(CreateObjects, obj_data=[p.get_data() for p in other_players])
+        return {'uid': player.uid}
 
     @PlayerReady.responder
-    def ready(self, uid):
+    def ready(self, uid):  # TODO: deprecated?
         jug = self.hcriat.get_creature_by_uid(uid)
         if jug:
             jug.set_ready()
@@ -81,17 +67,9 @@ class PWProtocol(amp.AMP):
 
     @Shoot.responder
     def player_shoot(self, uid, direction):
-        if not validar_dir8(direction):
-            return
-
-        jug = self.hcriat.get_creature_by_uid(uid)
-        if not jug:
-            return
-
-        if jug.is_live() and not jug.cant_shot():
-            HandlerBala(jug, direction, self)
-            self.send_client(
-                PlayerShoot, broadcast=True, uid=uid, direction=direction, x=jug.x, y=jug.y)
+        jug, shoot_handler = shoot_action(uid, direction, self.hcriat, self.hit)
+        self.send_client(
+            PlayerShoot, broadcast=True, uid=uid, direction=direction, x=jug.x, y=jug.y)
         return {'ok': 1}
 
     def hit(self, player_uid, damage):
@@ -123,24 +101,57 @@ class Protocolo(object):
 #         EnviarTodos('np', nuevas_pos)
 
 
-def mover_criatura(criatura, hcriat, dir):
-    x, y = criatura.get_coor()
-    # next position
-    if dir == 'n':
-        y -= 1
-    elif dir == 'e':
-        x += 1
-    elif dir == 's':
-        y += 1
-    elif dir == 'o':
-        x -= 1
+def create_player(team, hcriat):
+    # creamos el jugador
+    map = hcriat.get_map()
+    pos = map.getAzul() if team == 1 else map.getRojo()
 
-    mapa = hcriat.get_map()
-    if mapa.posBloqueada(x, y):
-        return False
+    x, y = pos
+    player = hcriat.crearJugador(x, y, team)
 
-    if not criatura.is_live():
-        return False
+    other_players = [j for j in hcriat.get_players().values() if j != player]
 
-    mapa.moverJugador(criatura, x, y)
-    return True
+    # y por ultimo el score de las rondas
+    # azul, rojo, ronda = self.hcriat.ronda.get()
+    # EnviarTodos('nr', [azul, rojo, ronda])
+    return player, other_players, map
+
+
+def move_player(uid, direction, hcriat):
+    jug = hcriat.get_creature_by_uid(uid)
+    if not jug:
+        raise exceptions.PlayerDoesNotExist
+    if not validar_dir4(direction):
+        raise exceptions.InvalidMovementDirection
+
+    if jug.is_live() and not jug.cant_move():
+        x, y = jug.get_coor()
+        # next position
+        if direction == 'n':
+            y -= 1
+        elif direction == 'e':
+            x += 1
+        elif direction == 's':
+            y += 1
+        elif direction == 'o':
+            x -= 1
+
+        mapa = hcriat.get_map()
+        if mapa.posBloqueada(x, y):
+            raise exceptions.BlockedPosition
+        mapa.moverJugador(jug, x, y)
+
+        return jug
+
+
+def shoot_action(uid, direction, hcriat, callback):
+    if not validar_dir8(direction):
+        raise exceptions.InvalidShootDirection
+
+    jug = hcriat.get_creature_by_uid(uid)
+    if not jug:
+        raise exceptions.PlayerDoesNotExist
+
+    if jug.is_live() and not jug.cant_shot():
+        shoot_handler = HandlerBala(jug, direction, callback)
+        return jug, shoot_handler

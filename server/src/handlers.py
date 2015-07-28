@@ -1,4 +1,6 @@
-import threading, time
+import time
+
+from twisted.internet import reactor
 from entidades import Jugador, Bala
 
 DEBUG = False
@@ -93,24 +95,21 @@ class HandlerCriaturas:
         self.ronda.restart()
 
 
-class HandlerBala(threading.Thread):
+class HandlerBala(object):
 
-    def __init__(self, jug, dir, prot):
-        threading.Thread.__init__(self)
-        self.bala = Bala(jug.uid, jug.x, jug.y, dir, jug.get_team())
-        self.prot = prot
+    def __init__(self, jug, direction, callback):
+        self.bala = Bala(jug.uid, jug.x, jug.y, direction, jug.get_team())
+        self.callback = callback
         self.hcriat = HandlerCriaturas()
         self.mapa = self.hcriat.get_map()
         self.jug = jug
         self.jug.block_shot()
-        self.start()
-    
-    def run(self):
-        res = True
-        while res:
-            res = self.update()
+        reactor.callInThread(self.handle)
+
+    def handle(self):
+        while self.update():
             time.sleep(self.bala.DELAY)
-            
+
     def update(self):
         # proximo movimiento
         x = self.bala.x + self.bala.dx
@@ -142,7 +141,7 @@ class HandlerBala(threading.Thread):
                     if c.hit(self.bala.DMG):
                         MurioJugador(c, self.prot)
                     else:
-                        self.prot.hit(mid, self.bala.DMG)
+                        self.callback(mid, self.bala.DMG)
                 return False
 
 
