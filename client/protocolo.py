@@ -1,6 +1,6 @@
 from twisted.protocols import amp
 
-from commands import (
+from game_commands import (
     Move, MoveObject, SendMap, CreateObject, CreateObjects, Login, PlayerReady, PlayerShoot, Shoot,
     PlayerHit)
 

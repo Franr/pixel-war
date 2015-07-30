@@ -63,9 +63,6 @@ class Mapa(object):
     def getIdByPos(self, x, y):
         return self.dicMapa[y, x]
 
-    def getObjeto(self, x, y):
-        return self.dicMapa[y, x]
-
     def setObjeto(self, objeto, x, y):
         self.dicMapa[y, x] = objeto.get_uid()
 

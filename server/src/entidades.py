@@ -16,9 +16,6 @@ class Objeto(object):
         self.x = x
         self.y = y
 
-    def is_uid(self, uid):
-        return self.uid == uid
-
     def get_uid(self):
         return self.uid
 
@@ -48,18 +45,18 @@ class Criatura(Objeto):
     def is_team(self, equipo):
         return self.equipo == equipo
 
-    def hit(self, danio):
-        self.vida -= danio
+    def hit(self, damage):
+        self.vida -= damage
         if self.vida <= 0:
             self.morir()
             return True
         return False
-            
+
     def morir(self):
         if self.vivo:
             self.vivo = False
             self.die()
-            
+
     def die(self):
         self.hcriat.eliminarCriatura(self.get_uid())
 
@@ -81,7 +78,7 @@ class Jugador(Criatura):
     def get_data(self):
         # devuelve los datos necesarios para el paquete de creacion de jugador
         return [self.get_uid(), self.equipo, self.x, self.y, self.vida, self.vida_max]
-    
+
     def mover(self, x, y):
         Criatura.mover(self, x, y)
         self.block_movement()
