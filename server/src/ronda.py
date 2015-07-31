@@ -14,28 +14,28 @@ class SingletonRonda(type):
         return cls.__instance
 
 
-class Ronda:
+class Ronda(object):
 
     # Esta clase es SINGLETON
     __metaclass__ = SingletonRonda
-    
+
     def __init__(self):
         self.comenzada = False
         self.restarting = False
         self.total_azul = 0
         self.total_rojo = 0
         self.ronda = 0
-        
+
     def jugando(self):
         return self.comenzada and not self.restarting
-        
+
     def _descontar(self, equipo):
         if equipo == "r":
             self.rojos -= 1
         else:
             self.azules -= 1
         self._check()
-        
+
     def _check(self):
         if self.rojos <= 0:
             self._ganoAzul()
@@ -43,30 +43,30 @@ class Ronda:
         elif self.azules <= 0:
             self._ganoRojo()
             self.nuevaRonda()
-            
+
     def _ganoAzul(self):
         self.total_azul += 1
         Protocolo.enviarNuevaRonda()
-    
+
     def _ganoRojo(self):
         self.total_rojo += 1
         Protocolo.enviarNuevaRonda()
-        
+
     def nuevaRonda(self):
         if not self.restarting:
             #tc = threading.Thread(target=self.comenzar)
             #tc.start()
             self.comenzar()
-        
+
     def get(self):
         return self.total_azul, self.total_rojo, self.ronda
-        
+
     def restart(self):
         self.total_azul = 0
         self.total_rojo = 0
         self.ronda = 0
         self.nuevaRonda()
-        
+
     def comenzar(self):
         # contamos todos los jugadores que hay en cada equipo
         self.rojos = 0

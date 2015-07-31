@@ -64,3 +64,8 @@ class Shoot(Command):
     arguments = [('uid', Integer()),
                  ('direction', String())]
     response = [('ok', Integer())]
+
+
+class LogoutPlayer(Command):
+    arguments = [('uid', Integer())]
+    response = [('ok', Integer())]
