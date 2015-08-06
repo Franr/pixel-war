@@ -12,3 +12,7 @@ class InvalidShootDirection(Exception):
 
 class BlockedPosition(Exception):
     pass
+
+
+class CantShoot(Exception):
+    pass

@@ -27,13 +27,13 @@ class PWProtocol(amp.AMP):
         self.hcriat.del_creature_by_uid(player.uid)
         self.send_client(LogoutPlayer, broadcast=True, uid=player.uid)
 
-    def send_client(self, commandType, *a, **kw):
-        echoers = [self]
+    def send_client(self, command_type, *a, **kw):
+        peers = [self]
         if 'broadcast' in kw:
-            echoers = self.factory.peers.keys()
+            peers = self.factory.peers.keys()
             del kw['broadcast']
-        for echoer in echoers:
-            echoer.callRemote(commandType, *a, **kw)
+        for peer in peers:
+            peer.callRemote(command_type, *a, **kw)
 
     @Move.responder
     def move(self, uid, direction):
@@ -67,9 +67,12 @@ class PWProtocol(amp.AMP):
 
     @Shoot.responder
     def player_shoot(self, uid, direction):
-        jug, shoot_handler = shoot_action(uid, direction, self.hcriat, self.hit)
-        self.send_client(
-            PlayerShoot, broadcast=True, uid=uid, direction=direction, x=jug.x, y=jug.y)
+        try:
+            jug, shoot_handler = shoot_action(uid, direction, self.hcriat, self.hit)
+        except exceptions.CantShoot:
+            pass
+        else:
+            self.send_client(PlayerShoot, broadcast=True, uid=uid, direction=direction, x=jug.x, y=jug.y)
         return {'ok': 1}
 
     def hit(self, player_uid, damage):
@@ -150,3 +153,4 @@ def shoot_action(uid, direction, hcriat, callback):
     if jug.is_live() and not jug.cant_shot():
         shoot_handler = HandlerBala(jug, direction, callback)
         return jug, shoot_handler
+    raise exceptions.CantShoot
