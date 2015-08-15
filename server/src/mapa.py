@@ -1,21 +1,23 @@
 import os
+
+import exceptions
 from utils import Archivo
 
 
 class Mapa(object):
 
-    ## Dividir en 2 clases:
-    ## el mapa y el handler del mapa
+    # Dividir en 2 clases:
+    # el mapa y el handler del mapa
     
-    ## atencion:
-    ## internamente la clase maneja las coordenadas primero a "Y" y despues a "X"
-    ## por la manera en que se splitea el mapa desde el archivo.
-    ## pero las llamadas a los metodos desde afuera se hace igual que siempre: x, y.
+    # atencion:
+    # internamente la clase maneja las coordenadas primero a "Y" y despues a "X"
+    # por la manera en que se splitea el mapa desde el archivo.
+    # pero las llamadas a los metodos desde afuera se hace igual que siempre: x, y.
     
-    ## El mapa solo contiene ids en sus arrays:
-    ## = 0  libre
-    ## = 1  bloque
-    ## > 1  jugador    
+    # El mapa solo contiene ids en sus arrays:
+    # = 0  libre
+    # = 1  bloque
+    # > 1  jugador
 
     def __init__(self, nombre):
         self.nombre = nombre
@@ -24,140 +26,105 @@ class Mapa(object):
         maps_folder = os.path.dirname(__file__) + '/../maps'
         sec = self.parse(Archivo(maps_folder, nombre + ".pwm", "r").buffer)
         if sec:
-            self.genMapaNumerico(sec)
-            self.genMapaChar()
+            self.gen_mapa_numerico(sec)
+            self.gen_mapa_char()
 
     def parse(self, sec):
         # Dividimos c/linea por las comas
         for i in range(len(sec)):
             sec[i] = sec[i].split(',')
-            if len(sec[i]) % 8:
-                print "Error: Longitud de fila no divisible por 8."
-                return None
-                
+
         # calculamos las medidas del mapa:
         self.dy = len(sec)
         self.dx = len(sec[0])
         return sec
 
-    def genMapaNumerico(self, mapa):
+    def gen_mapa_numerico(self, mapa):
         self.dicMapa = {}
         self.compacto = []
         for y in range(len(mapa)):
             fila_compacta = ""
             for x in range(len(mapa[y])):
-                id = int(mapa[y][x])
-                if id == 2:
+                mid = int(mapa[y][x])
+                if mid == 2:
                     # respawn rojo
-                    self.setRojo(x, y)
-                    id = 0
-                elif id == 3:
+                    self.set_red(x, y)
+                    mid = 0
+                elif mid == 3:
                     # respawn azul
-                    self.setAzul(x, y)
-                    id = 0
-                self.dicMapa[y, x] = id
-                fila_compacta += str(id)
+                    self.set_azul(x, y)
+                    mid = 0
+                self.dicMapa[y, x] = mid
+                fila_compacta += str(mid)
             # el compacto se usa para enviar el mapa en formato binario
             self.compacto.append(fila_compacta)
 
-    def getIdByPos(self, x, y):
+    def get_id_by_pos(self, x, y):
         return self.dicMapa[y, x]
 
-    def setObjeto(self, objeto, x, y):
+    def set_object(self, objeto, x, y):
         self.dicMapa[y, x] = objeto.get_uid()
 
-    def delObjeto(self, objeto):
+    def del_object(self, objeto):
         x, y = objeto.get_coor()
-        self.limpiarCoor(x, y)
+        self.clean_coor(x, y)
 
-    def setRojo(self, x, y):
+    def set_red(self, x, y):
         self.x_rojo = x
         self.y_rojo = y
 
-    def setAzul(self, x, y):
+    def set_azul(self, x, y):
         self.x_azul = x
         self.y_azul = y
 
-    def getRojo(self):
-        if self.posBloqueada(self.x_rojo, self.y_rojo):
-            return self.getPosVaciasAlrededorPos(self.x_rojo, self.y_rojo)
+    def get_red(self):
+        if self.pos_is_blocked(self.x_rojo, self.y_rojo):
+            return self.get_empty_place(self.x_rojo, self.y_rojo)
         else:
             return self.x_rojo, self.y_rojo
 
-    def getAzul(self):
-        if self.posBloqueada(self.x_azul, self.y_azul):
-            return self.getPosVaciasAlrededorPos(self.x_azul, self.y_azul)
+    def get_blue(self):
+        if self.pos_is_blocked(self.x_azul, self.y_azul):
+            return self.get_empty_place(self.x_azul, self.y_azul)
         else:
             return self.x_azul, self.y_azul
 
-    def posicionar(self, jugador):
-        if jugador.get_equipo() == "a":
-            pos = self.getAzul()
-        else:
-            pos = self.getRojo()
-            
-        if pos:
-            x, y = pos
-            self.setObjeto(jugador, x, y)
-            jugador.mover(x, y)
-            return jugador.get_uid(), x, y
-        else:
-            print "error al ubicar", jugador.get_uid()
+    def base_position(self, jugador):
+        pos = None
+        if jugador.get_team() == 1:  # TODO: check team reference
+            pos = self.get_blue()
+        elif jugador.get_team() == 2:
+            pos = self.get_red()
 
-    def limpiarCoor(self, x, y):
+        if not pos:
+            raise exceptions.TeamBasePositionNotFound
+
+        x, y = pos
+        self.set_object(jugador, x, y)
+        jugador.mover(x, y)
+        return jugador
+
+    def clean_coor(self, x, y):
         self.dicMapa[y, x] = 0
 
-    def posBloqueada(self, x, y):
+    def pos_is_blocked(self, x, y):
         return self.dicMapa[y, x] >= 1
 
-    def getDim(self):
-        # devuelve las dimensiones del mapa
-        return self.dx, self.dy
-
-    def getIdCriatura(self, x, y):
-        # devuelve el id de la criatura en la posicion x, y
-        # si no hay criatura devuelve None
-        
-        # comprobamos que las coordenadas no desborden
-        if (x < 0) or (x > self.dx - 1) or (y < 0) or (y > self.dy - 1):
-            return None
-            
-        if self.dicMapa[y, x] > 1:
-            return self.dicMapa[y, x]
-        else:
-            return None
-
-    def getPosVaciasAlrededorPos(self, x, y):
+    def get_empty_place(self, x, y):
         cuadrante = [[-1, -1], [0, -1], [1, -1],
                      [-1,  0],          [1,  0],
                      [-1,  1], [0,  1], [1,  1]]
-                     
+
         for pos in cuadrante:
             nx = x + pos[0]
             ny = y + pos[1]
-            if not self.posBloqueada(nx, ny):
+            if not self.pos_is_blocked(nx, ny):
                 return nx, ny
         # todo ocupado
         return None
 
-    def getIdCriaturasAlrededorCriatura(self, criatura):
-        cuadrante = [[-1, -1], [0, -1], [1, -1],
-                     [-1,  0],          [1,  0],
-                     [-1,  1], [0,  1], [1,  1]]
-                     
-        x, y = criatura.get_coor()
-        ids = []
-        for pos in cuadrante:
-            id = self.getIdCriatura(x + pos[0], y + pos[1])
-            # hay criatura?
-            if id:
-                ids.append(id)
-        return ids
-
-    def getMapaChar(self):
-        return self.mapaChar
-
-    def genMapaChar(self):
+    def gen_mapa_char(self):
+        # TODO: change this -> just send the 2d array
         long_fila = None
         filas = ""
         for y in self.compacto:
@@ -172,13 +139,13 @@ class Mapa(object):
             filas += fila_char
         self.mapaChar = long_fila + filas
 
-    def moverJugador(self, jugador, x, y):
+    def move_player(self, jugador, x, y):
         antx, anty = jugador.get_coor()
         jugador.mover(x, y)
-        self.limpiarCoor(antx, anty)
-        self.setObjeto(jugador, x, y)
+        self.clean_coor(antx, anty)
+        self.set_object(jugador, x, y)
 
-    def limpiarTodo(self):
+    def clean_map(self):
         for (y, x) in self.dicMapa:
             if self.dicMapa[y, x] != 1:
                 self.dicMapa[y, x] = 0

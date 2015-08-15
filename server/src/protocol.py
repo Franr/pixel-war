@@ -1,10 +1,10 @@
 from twisted.protocols import amp
 
 from game_commands import (
-    Move, MoveObject, SendMap, CreateObject, CreateObjects, Login, PlayerReady, PlayerShoot,
-    Shoot, PlayerHit, PlayerDie, PlayerRevive, LogoutPlayer)
+    Move, MoveObject, SendMap, CreateObject, CreateObjects, Login, PlayerShoot, Shoot, PlayerHit,
+    PlayerRevive, LogoutPlayer, UpdateScore, RestartRound)
 import exceptions
-from server.src.handlers import HandlerBala, get_team_start_position
+from server.src.handlers import HandlerBala, get_team_start_position, HandlerCriaturas
 
 
 def validar_dir4(direction):
@@ -17,7 +17,6 @@ def validar_dir8(direction):
 
 class PWProtocol(amp.AMP):
     hcriat = None
-    mapa = None
 
     def __init__(self, factory):
         self.factory = factory
@@ -39,7 +38,7 @@ class PWProtocol(amp.AMP):
     def move(self, uid, direction):
         try:
             jug = move_player(uid, direction, self.hcriat)
-        except exceptions.BlockedPosition:
+        except (exceptions.BlockedPosition, exceptions.CantMove):
             pass
         else:
             self.send_client(MoveObject, broadcast=True, uid=uid, x=jug.x, y=jug.y)
@@ -47,23 +46,17 @@ class PWProtocol(amp.AMP):
 
     @Login.responder
     def login(self, team):
-        player, other_players, map = create_player(team, self.hcriat)
+        player, other_players, score, pw_map = create_player(team, self.hcriat)
         self.factory.peers[self] = player
         # map
-        self.send_client(SendMap, sec_map=map.getMapaChar())
+        self.send_client(SendMap, sec_map=pw_map.mapaChar)
         # create new player on all the clients
         self.send_client(CreateObject, broadcast=True, obj_data=player.get_data())
         # create all the players on the new client
         self.send_client(CreateObjects, obj_data=[p.get_data() for p in other_players])
+        # update the score
+        self.send_client(UpdateScore, blue=score[0], red=score[1])
         return {'uid': player.uid}
-
-    @PlayerReady.responder
-    def ready(self, uid):  # TODO: deprecated?
-        jug = self.hcriat.get_creature_by_uid(uid)
-        if jug:
-            jug.set_ready()
-            return {'ok': 1}
-        self.hcriat.start_round()
 
     @Shoot.responder
     def player_shoot(self, uid, direction):
@@ -75,38 +68,34 @@ class PWProtocol(amp.AMP):
             self.send_client(PlayerShoot, broadcast=True, uid=uid, direction=direction, x=jug.x, y=jug.y)
         return {'ok': 1}
 
+    @RestartRound.responder
+    def restart_round(self, uid):
+        players, new_score = restart_round(uid, self.hcriat)
+        self.send_client(UpdateScore, broadcast=True, blue=new_score[0], red=new_score[1])
+        for p in players:
+            self.send_client(MoveObject, broadcast=True, uid=p.uid, x=p.x, y=p.y)
+            self.send_client(PlayerRevive, broadcast=True, uid=p.uid)
+        return {'ok': 1}
+
     def hit(self, player_uid, damage):
         self.send_client(PlayerHit, broadcast=True, uid=player_uid, dmg=damage)
 
     def die(self, player_uid):
-        self.send_client(PlayerRevive, broadcast=True, uid=player_uid)
+        score = increase_score(player_uid, self.hcriat)
         revive_player(player_uid, self.hcriat)
-
-
-class Protocolo(object):
-    pass
-
-#     @classmethod
-#     def enviarNuevaRonda(self):
-#         azul, rojo, ronda = HandlerCriaturas().ronda.get()
-#         EnviarTodos('nr', [azul, rojo, ronda])
-#
-#     @classmethod
-#     def enviarNuevasPos(self, nuevas_pos):
-#         # nuevas_pos ya es un array
-#         EnviarTodos('np', nuevas_pos)
+        self.send_client(PlayerRevive, broadcast=True, uid=player_uid)
+        self.send_client(UpdateScore, broadcast=True, blue=score[0], red=score[1])
 
 
 def create_player(team, hcriat):
+    # you
     x, y = get_team_start_position(hcriat, team)
-    player = hcriat.crearJugador(x, y, team)
-
+    player = hcriat.crear_jugador(x, y, team)
+    # the others
     other_players = [j for j in hcriat.get_players().values() if j != player]
-
-    # y por ultimo el score de las rondas
-    # azul, rojo, ronda = self.hcriat.ronda.get()
-    # EnviarTodos('nr', [azul, rojo, ronda])
-    return player, other_players, hcriat.get_map()
+    # the score
+    score = hcriat.get_score()
+    return player, other_players, score, hcriat.get_map()
 
 
 def move_player(uid, direction, hcriat):
@@ -115,7 +104,7 @@ def move_player(uid, direction, hcriat):
         raise exceptions.InvalidMovementDirection
 
     if not jug.is_live() or jug.cant_move():
-        return
+        raise exceptions.CantMove
 
     x, y = jug.get_coor()
     # next position
@@ -133,10 +122,10 @@ def move_player(uid, direction, hcriat):
 
 def teleport_player(uid, x, y, hcriat):
     jug = hcriat.get_creature_by_uid(uid)
-    mapa = hcriat.get_map()
-    if mapa.posBloqueada(x, y):
+    pw_map = hcriat.get_map()
+    if pw_map.pos_is_blocked(x, y):
         raise exceptions.BlockedPosition
-    mapa.moverJugador(jug, x, y)
+    pw_map.move_player(jug, x, y)
 
     return jug
 
@@ -148,7 +137,7 @@ def shoot_action(uid, direction, hcriat, hit_callback, die_callback):
     jug = hcriat.get_creature_by_uid(uid)
 
     if jug.is_live() and not jug.cant_shot():
-        shoot_handler = HandlerBala(jug, direction, hit_callback, die_callback)
+        shoot_handler = HandlerBala(jug, direction, hcriat, hit_callback, die_callback)
         return jug, shoot_handler
     raise exceptions.CantShoot
 
@@ -156,3 +145,20 @@ def shoot_action(uid, direction, hcriat, hit_callback, die_callback):
 def revive_player(uid, hcriat):
     jug = hcriat.get_creature_by_uid(uid)
     jug.revive()
+
+
+def increase_score(uid, hcriat):
+    jug = hcriat.get_creature_by_uid(uid)
+    if jug.team == HandlerCriaturas.BLUE:
+        hcriat.score.murio_azul()
+    else:
+        hcriat.score.murio_rojo()
+    return hcriat.score.get_data()
+
+
+def restart_round(uid, hcriat):
+    jug = hcriat.get_creature_by_uid(uid)  # TODO: round leader validation?
+    hcriat.score.restart()
+    new_players = hcriat.restart_players()
+    new_score = hcriat.get_score()
+    return new_players, new_score

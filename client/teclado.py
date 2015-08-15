@@ -35,5 +35,5 @@ class TecladoHandler(object):
                     BloqueoMov()
                     self.juego.conexion.cf.protocol.move('e')
             elif tecla[K_F1]:
-                self.juego.conexion.protcol.restartRound()
+                self.juego.conexion.cf.protocol.restart_round()
         return True

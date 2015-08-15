@@ -1,8 +1,8 @@
 from twisted.protocols import amp
 
 from game_commands import (
-    Move, MoveObject, SendMap, CreateObject, CreateObjects, Login, PlayerReady, PlayerShoot, Shoot,
-    PlayerHit, PlayerDie, PlayerRevive, LogoutPlayer)
+    Move, MoveObject, SendMap, CreateObject, CreateObjects, Login, PlayerShoot, Shoot, PlayerHit,
+    PlayerRevive, LogoutPlayer, UpdateScore, RestartRound)
 
 from bala import Bala
 from bloqueos import BloqueoDisp
@@ -78,13 +78,6 @@ class PWProtocol(amp.AMP):
             jugador.hit(dmg)
         return {'ok': 1}
 
-    @PlayerDie.responder
-    def die_player(self, uid, dmg):
-        jugador = self.hcriat.get_creature_by_uid(uid)
-        if jugador:
-            jugador.matar(dmg)
-        return {'ok': 1}
-
     @PlayerRevive.responder
     def revive_player(self, uid):
         jugador = self.hcriat.get_creature_by_uid(uid)
@@ -95,6 +88,11 @@ class PWProtocol(amp.AMP):
     @LogoutPlayer.responder
     def logout_player(self, uid):
         self.logout(uid)
+        return {'ok': 1}
+
+    @UpdateScore.responder
+    def update_score(self, blue, red):
+        self.hcriat.set_score(blue, red, 1)  # TODO: round # is deprecated
         return {'ok': 1}
 
     def disparar(self, direction):
@@ -109,27 +107,8 @@ class PWProtocol(amp.AMP):
             self.mapa.clean_position(jug.x, jug.y)
             self.hcriat.del_creature_by_id(uid)
 
-    def ready(self):  # TODO: deprecated?
-        self.callRemote(PlayerReady, self.my_uid)
-        self.juego.comenzar()
-
     def move(self, direction):
         self.callRemote(Move, uid=self.my_uid, direction=direction)
 
-        # elif accion == 'nr':
-        #     # nueva ronda
-        #     score_azul = int(mensaje[0])
-        #     score_rojo = int(mensaje[1])
-        #     ronda = int(mensaje[2])
-        #     self.hcriat.setScore(score_azul, score_rojo, ronda)
-        #     self.hcriat.resetTodos()
-
-        # elif accion == 'np':
-        #     # nuevas posiciones de todos los jugadores
-        #     for i in range(0, len(mensaje), 3):
-        #         id = int(mensaje[i])
-        #         px = int(mensaje[i+1])
-        #         py = int(mensaje[i+2])
-        #         jug = self.hcriat.getCriaturaById(id)
-        #         if jug:
-        #             jug.mover(px, py)
+    def restart_round(self):
+        self.callRemote(RestartRound, uid=self.my_uid)

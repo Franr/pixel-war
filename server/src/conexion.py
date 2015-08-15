@@ -17,8 +17,7 @@ class Conexion(object):
     PORT = 20000
     MAX_CONEXIONES = 20
 
-    def __init__(self, mapa, hcriat):
-        PWProtocol.mapa = mapa
+    def __init__(self, hcriat):
         PWProtocol.hcriat = hcriat
         reactor.listenTCP(self.PORT, MultiEchoFactory())
         print 'server running...'

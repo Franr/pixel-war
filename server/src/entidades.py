@@ -31,7 +31,7 @@ class Criatura(Objeto):
         self.vivo = True
         self.envenenado = False
         self.hcriat = hcriat
-        self.equipo = 0
+        self.team = 0
         
     def mover(self, x, y):
         self.set_coor(x, y)
@@ -40,10 +40,7 @@ class Criatura(Objeto):
         return self.vivo
 
     def get_team(self):
-        return self.equipo
-
-    def is_team(self, equipo):
-        return self.equipo == equipo
+        return self.team
 
     def hit(self, damage):
         self.vida -= damage
@@ -56,9 +53,9 @@ class Criatura(Objeto):
 class Jugador(Criatura):
     """ Clase para todos los jugadores del juego """
     
-    def __init__(self, uid, x, y, vida, vida_max, equipo, hcriat):
+    def __init__(self, uid, x, y, vida, vida_max, team, hcriat):
         Criatura.__init__(self, uid, x, y, vida, vida_max, hcriat)
-        self.equipo = equipo
+        self.team = team
         self.bloqM = BloqueoMov()
         self.bloqD = BloqueoDisp()
         # un jugador esta listo una vez asignados todos sus datos
@@ -69,15 +66,15 @@ class Jugador(Criatura):
 
     def get_data(self):
         # devuelve los datos necesarios para el paquete de creacion de jugador
-        return [self.get_uid(), self.equipo, self.x, self.y, self.vida, self.vida_max]
+        return [self.get_uid(), self.team, self.x, self.y, self.vida, self.vida_max]
 
     def mover(self, x, y):
         Criatura.mover(self, x, y)
         self.block_movement()
-    
+
     def block_movement(self):
         self.bloqM = BloqueoMov()
-    
+
     def block_shot(self):
         self.bloqD = BloqueoDisp()
 
@@ -97,26 +94,26 @@ class Bala(Objeto):
     DELAY = 0.05
     DMG = 5
 
-    def __init__(self, uid, x, y, dir, equipo):
+    def __init__(self, uid, x, y, direction, equipo):
         Objeto.__init__(self, uid, x, y)
-        self.dir = dir
+        self.direction = direction
         self.equipo = equipo
         self.dx = 0
         self.dy = 0
-        for d in dir:
+        for d in direction:
             self.calc_desplazamiento(d)
 
     def is_team(self, equipo):
         return self.equipo == equipo
 
-    def calc_desplazamiento(self, dir):
-        if dir == 'n':
+    def calc_desplazamiento(self, direction):
+        if direction == 'n':
             self.dy = -1
-        elif dir == 's':
+        elif direction == 's':
             self.dy = 1
-        elif dir == 'e':
+        elif direction == 'e':
             self.dx = 1
-        elif dir == 'o':
+        elif direction == 'o':
             self.dx = -1
 
     def mover(self):

@@ -16,3 +16,11 @@ class BlockedPosition(Exception):
 
 class CantShoot(Exception):
     pass
+
+
+class CantMove(Exception):
+    pass
+
+
+class TeamBasePositionNotFound(Exception):
+    pass

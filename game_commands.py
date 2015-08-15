@@ -39,11 +39,6 @@ class Login(Command):
     response = [('uid', Integer())]
 
 
-class PlayerReady(Command):
-    arguments = [('uid', Integer())]
-    response = [('ok', Integer())]
-
-
 class PlayerShoot(Command):
     # create a shot on the clients
     arguments = [('uid', Integer()),
@@ -56,11 +51,6 @@ class PlayerShoot(Command):
 class PlayerHit(Command):
     arguments = [('uid', Integer()),
                  ('dmg', Integer())]
-    response = [('ok', Integer())]
-
-
-class PlayerDie(Command):
-    arguments = [('uid', Integer())]
     response = [('ok', Integer())]
 
 
@@ -77,5 +67,16 @@ class Shoot(Command):
 
 
 class LogoutPlayer(Command):
+    arguments = [('uid', Integer())]
+    response = [('ok', Integer())]
+
+
+class UpdateScore(Command):
+    arguments = [('blue', Integer()),
+                 ('red', Integer())]
+    response = [('ok', Integer())]
+
+
+class RestartRound(Command):
     arguments = [('uid', Integer())]
     response = [('ok', Integer())]
