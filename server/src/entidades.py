@@ -48,17 +48,9 @@ class Criatura(Objeto):
     def hit(self, damage):
         self.vida -= damage
         if self.vida <= 0:
-            self.morir()
+            self.vivo = False
             return True
         return False
-
-    def morir(self):
-        if self.vivo:
-            self.vivo = False
-            self.die()
-
-    def die(self):
-        self.hcriat.eliminarCriatura(self.get_uid())
 
 
 class Jugador(Criatura):
@@ -95,10 +87,7 @@ class Jugador(Criatura):
     def cant_shot(self):
         return self.bloqD.bloq
 
-    def die(self):
-        self.hcriat.del_player(self.get_uid())
-
-    def revivir(self):
+    def revive(self):
         self.vivo = True
         self.vida = self.vida_max
 

@@ -1,7 +1,9 @@
 import time
 
 from twisted.internet import reactor
+
 from entidades import Jugador, Bala
+from exceptions import PlayerDoesNotExist
 
 DEBUG = False
 
@@ -51,25 +53,22 @@ class HandlerCriaturas:
         self.mapa.setObjeto(j, x, y)
         return j
 
-    def desconectarJugador(self, id):
-        # se llama cuando se desconecta un jugador
-        criat = self.del_creature_by_uid(id)
-        if criat:
-            self.mapa.delObjeto(criat)
-            if DEBUG: print("criatura eliminada:", id)
-
     def del_player(self, uid):
         # se llama cuando se muere un jugador
         jug = self.get_creature_by_uid(uid)
         if jug:
             self.mapa.delObjeto(jug)
-            if DEBUG: print("jugador eliminado:", uid)
 
     def del_creature_by_uid(self, uid):
-        return self.jugadores.pop(uid, None)
+        player = self.jugadores.pop(uid, None)
+        if player:
+            self.mapa.delObjeto(player)
+        return player
 
     def get_creature_by_uid(self, uid):
-        return self.jugadores.get(uid, None)
+        if uid not in self.jugadores:
+            raise PlayerDoesNotExist
+        return self.jugadores[uid]
 
     def get_players(self):
         return self.jugadores
@@ -87,7 +86,7 @@ class HandlerCriaturas:
         self.mapa.limpiarTodo()
         nuevas_pos = []
         for j in self.jugadores.values():
-            j.revivir()
+            j.revive()
             nuevas_pos.extend(self.mapa.posicionar(j))
         return nuevas_pos
         
@@ -97,9 +96,10 @@ class HandlerCriaturas:
 
 class HandlerBala(object):
 
-    def __init__(self, jug, direction, callback):
+    def __init__(self, jug, direction, hit_callback, die_callback):
         self.bala = Bala(jug.uid, jug.x, jug.y, direction, jug.get_team())
-        self.callback = callback
+        self.hit_callback = hit_callback
+        self.die_callback = die_callback
         self.hcriat = HandlerCriaturas()
         self.mapa = self.hcriat.get_map()
         self.jug = jug
@@ -139,15 +139,12 @@ class HandlerBala(object):
             else:
                 if c.is_live():
                     if c.hit(self.bala.DMG):
-                        MurioJugador(c, self.prot)
+                        self.die_callback(mid)
                     else:
-                        self.callback(mid, self.bala.DMG)
+                        self.hit_callback(mid, self.bala.DMG)
                 return False
 
 
-class MurioJugador(object):
-
-    def __init__(self, jugador, prot):
-        hc = HandlerCriaturas()
-        prot.enviarEliminarCriatura(jugador.get_uid())
-        hc.ronda.murio(jugador.get_team())
+def get_team_start_position(hcriat, team):
+    mapa = hcriat.get_map()
+    return mapa.getAzul() if team == 1 else mapa.getRojo()

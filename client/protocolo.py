@@ -2,7 +2,7 @@ from twisted.protocols import amp
 
 from game_commands import (
     Move, MoveObject, SendMap, CreateObject, CreateObjects, Login, PlayerReady, PlayerShoot, Shoot,
-    PlayerHit, LogoutPlayer)
+    PlayerHit, PlayerDie, PlayerRevive, LogoutPlayer)
 
 from bala import Bala
 from bloqueos import BloqueoDisp
@@ -78,9 +78,23 @@ class PWProtocol(amp.AMP):
             jugador.hit(dmg)
         return {'ok': 1}
 
+    @PlayerDie.responder
+    def die_player(self, uid, dmg):
+        jugador = self.hcriat.get_creature_by_uid(uid)
+        if jugador:
+            jugador.matar(dmg)
+        return {'ok': 1}
+
+    @PlayerRevive.responder
+    def revive_player(self, uid):
+        jugador = self.hcriat.get_creature_by_uid(uid)
+        if jugador:
+            jugador.reset()
+        return {'ok': 1}
+
     @LogoutPlayer.responder
-    def hit(self, uid):
-        self.hcriat.del_creature_by_id(uid)
+    def logout_player(self, uid):
+        self.logout(uid)
         return {'ok': 1}
 
     def disparar(self, direction):

@@ -59,6 +59,16 @@ class PlayerHit(Command):
     response = [('ok', Integer())]
 
 
+class PlayerDie(Command):
+    arguments = [('uid', Integer())]
+    response = [('ok', Integer())]
+
+
+class PlayerRevive(Command):
+    arguments = [('uid', Integer())]
+    response = [('ok', Integer())]
+
+
 class Shoot(Command):
     # send shoot action to the server
     arguments = [('uid', Integer()),

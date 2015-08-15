@@ -2,17 +2,17 @@ from twisted.protocols import amp
 
 from game_commands import (
     Move, MoveObject, SendMap, CreateObject, CreateObjects, Login, PlayerReady, PlayerShoot,
-    Shoot, PlayerHit, LogoutPlayer)
+    Shoot, PlayerHit, PlayerDie, PlayerRevive, LogoutPlayer)
 import exceptions
-from server.src.handlers import HandlerBala
+from server.src.handlers import HandlerBala, get_team_start_position
 
 
-def validar_dir4(dir):
-    return dir in ('n', 's', 'o', 'e')
+def validar_dir4(direction):
+    return direction in ('n', 's', 'o', 'e')
 
 
-def validar_dir8(dir):
-    return validar_dir4(dir) or dir in ('no', 'ne', 'so', 'se')
+def validar_dir8(direction):
+    return validar_dir4(direction) or direction in ('no', 'ne', 'so', 'se')
 
 
 class PWProtocol(amp.AMP):
@@ -68,7 +68,7 @@ class PWProtocol(amp.AMP):
     @Shoot.responder
     def player_shoot(self, uid, direction):
         try:
-            jug, shoot_handler = shoot_action(uid, direction, self.hcriat, self.hit)
+            jug, shoot_handler = shoot_action(uid, direction, self.hcriat, self.hit, self.die)
         except exceptions.CantShoot:
             pass
         else:
@@ -78,16 +78,14 @@ class PWProtocol(amp.AMP):
     def hit(self, player_uid, damage):
         self.send_client(PlayerHit, broadcast=True, uid=player_uid, dmg=damage)
 
+    def die(self, player_uid):
+        self.send_client(PlayerRevive, broadcast=True, uid=player_uid)
+        revive_player(player_uid, self.hcriat)
+
 
 class Protocolo(object):
     pass
 
-
-#     @classmethod
-#     def enviarEliminarCriatura(self, uid):
-#         # este es para cuando se muere
-#         EnviarTodos('dl', [id])
-#
 #     @classmethod
 #     def enviarNuevaRonda(self):
 #         azul, rojo, ronda = HandlerCriaturas().ronda.get()
@@ -100,11 +98,7 @@ class Protocolo(object):
 
 
 def create_player(team, hcriat):
-    # creamos el jugador
-    map = hcriat.get_map()
-    pos = map.getAzul() if team == 1 else map.getRojo()
-
-    x, y = pos
+    x, y = get_team_start_position(hcriat, team)
     player = hcriat.crearJugador(x, y, team)
 
     other_players = [j for j in hcriat.get_players().values() if j != player]
@@ -112,45 +106,53 @@ def create_player(team, hcriat):
     # y por ultimo el score de las rondas
     # azul, rojo, ronda = self.hcriat.ronda.get()
     # EnviarTodos('nr', [azul, rojo, ronda])
-    return player, other_players, map
+    return player, other_players, hcriat.get_map()
 
 
 def move_player(uid, direction, hcriat):
     jug = hcriat.get_creature_by_uid(uid)
-    if not jug:
-        raise exceptions.PlayerDoesNotExist
     if not validar_dir4(direction):
         raise exceptions.InvalidMovementDirection
 
-    if jug.is_live() and not jug.cant_move():
-        x, y = jug.get_coor()
-        # next position
-        if direction == 'n':
-            y -= 1
-        elif direction == 'e':
-            x += 1
-        elif direction == 's':
-            y += 1
-        elif direction == 'o':
-            x -= 1
+    if not jug.is_live() or jug.cant_move():
+        return
 
-        mapa = hcriat.get_map()
-        if mapa.posBloqueada(x, y):
-            raise exceptions.BlockedPosition
-        mapa.moverJugador(jug, x, y)
+    x, y = jug.get_coor()
+    # next position
+    if direction == 'n':
+        y -= 1
+    elif direction == 'e':
+        x += 1
+    elif direction == 's':
+        y += 1
+    elif direction == 'o':
+        x -= 1
 
-        return jug
+    return teleport_player(uid, x, y, hcriat)
 
 
-def shoot_action(uid, direction, hcriat, callback):
+def teleport_player(uid, x, y, hcriat):
+    jug = hcriat.get_creature_by_uid(uid)
+    mapa = hcriat.get_map()
+    if mapa.posBloqueada(x, y):
+        raise exceptions.BlockedPosition
+    mapa.moverJugador(jug, x, y)
+
+    return jug
+
+
+def shoot_action(uid, direction, hcriat, hit_callback, die_callback):
     if not validar_dir8(direction):
         raise exceptions.InvalidShootDirection
 
     jug = hcriat.get_creature_by_uid(uid)
-    if not jug:
-        raise exceptions.PlayerDoesNotExist
 
     if jug.is_live() and not jug.cant_shot():
-        shoot_handler = HandlerBala(jug, direction, callback)
+        shoot_handler = HandlerBala(jug, direction, hit_callback, die_callback)
         return jug, shoot_handler
     raise exceptions.CantShoot
+
+
+def revive_player(uid, hcriat):
+    jug = hcriat.get_creature_by_uid(uid)
+    jug.revive()
