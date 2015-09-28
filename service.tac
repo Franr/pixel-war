@@ -7,14 +7,15 @@ from server.src.protocol import MultiEchoFactory, PWProtocol
 
 
 def get_service():
-    openshit_ip = os.getenv("OPENSHIFT_INTERNAL_IP")
+    port = int(os.environ['OPENSHIFT_DIY_PORT'] or 20000)
+    interface = os.environ['OPENSHIFT_DIY_IP']
     extra_args = {}
-    if openshit_ip:
-        extra_args = {'interface': openshit_ip}
+    if interface:
+        extra_args = {'interface': interface}
 
     server = Server()
     PWProtocol.hcriat = server.hcriat
-    return internet.TCPServer(20000, MultiEchoFactory(), **extra_args)
+    return internet.TCPServer(port, MultiEchoFactory(), **extra_args)
 
 application = service.Application("Pixel War Server")
 service = get_service()
