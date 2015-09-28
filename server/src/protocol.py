@@ -1,3 +1,4 @@
+from twisted.internet.protocol import Factory
 from twisted.protocols import amp
 
 from game_commands import (
@@ -13,6 +14,14 @@ def validar_dir4(direction):
 
 def validar_dir8(direction):
     return validar_dir4(direction) or direction in ('no', 'ne', 'so', 'se')
+
+
+class MultiEchoFactory(Factory):
+    def __init__(self):
+        self.peers = {}
+
+    def buildProtocol(self, addr):
+        return PWProtocol(self)
 
 
 class PWProtocol(amp.AMP):
