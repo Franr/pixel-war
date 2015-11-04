@@ -37,7 +37,6 @@ class HandlerCriaturas:
         self.jugadores[uid] = j
         # ubicamos el jugador en el mapa
         self.pw_map.set_object(j, x, y)
-        return j
 
     def del_creature_by_uid(self, uid):
         player = self.jugadores.pop(uid, None)
