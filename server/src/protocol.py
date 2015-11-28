@@ -35,6 +35,9 @@ class PWProtocol(amp.AMP):
         self.hcriat.del_creature_by_uid(player.uid)
         self.send_client(LogoutPlayer, broadcast=True, uid=player.uid)
 
+    def connectionMade(self):
+        self.transport.setTcpNoDelay(True)
+
     def send_client(self, command_type, *a, **kw):
         peers = [self]
         if 'broadcast' in kw:

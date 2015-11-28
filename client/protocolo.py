@@ -22,6 +22,7 @@ class PWProtocol(amp.AMP):
 
     def connectionMade(self):
         print 'team:', self.team
+        self.transport.setTcpNoDelay(True)
         self.callRemote(Login, team=self.team).addCallback(self.set_main_player)
 
     def set_main_player(self, result):
