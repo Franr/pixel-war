@@ -16,7 +16,7 @@ def validar_dir8(direction):
     return validar_dir4(direction) or direction in ('no', 'ne', 'so', 'se')
 
 
-class MultiEchoFactory(Factory):
+class PWProtocolFactory(Factory):
     def __init__(self):
         self.peers = {}
 
