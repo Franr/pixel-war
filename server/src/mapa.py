@@ -65,10 +65,6 @@ class Mapa(object):
     def set_object(self, objeto, x, y):
         self.dicMapa[y, x] = objeto.get_uid()
 
-    def del_object(self, objeto):
-        x, y = objeto.get_coor()
-        self.clean_coor(x, y)
-
     def set_red(self, x, y):
         self.x_rojo = x
         self.y_rojo = y
@@ -120,8 +116,6 @@ class Mapa(object):
             ny = y + pos[1]
             if not self.pos_is_blocked(nx, ny):
                 return nx, ny
-        # todo ocupado
-        return None
 
     def gen_mapa_char(self):
         # TODO: change this -> just send the 2d array

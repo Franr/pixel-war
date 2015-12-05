@@ -58,11 +58,6 @@ class Jugador(Criatura):
         self.team = team
         self.bloqM = BloqueoMov()
         self.bloqD = BloqueoDisp()
-        # un jugador esta listo una vez asignados todos sus datos
-        self.listo = False
-
-    def set_ready(self):
-        self.listo = True
 
     def get_data(self):
         # devuelve los datos necesarios para el paquete de creacion de jugador

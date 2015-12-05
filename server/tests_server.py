@@ -1,10 +1,11 @@
-import sys
-import os
+# import sys
+# import os
 
-sys.path += os.path.join(os.path.dirname(__file__), '..')
+# sys.path += os.path.join(os.path.dirname(__file__), '..')
 
 from twisted.trial import unittest
 
+from main import Server
 from src.exceptions import InvalidMovementDirection, BlockedPosition, InvalidShootDirection
 from src.mapa import Mapa
 from src.score import Score
@@ -23,6 +24,12 @@ class ActionsTest(unittest.TestCase):
         self.hcriat.jugadores = {}
         self.hcriat.pw_map = self.pw_map
         self.hcriat.score = self.score
+
+    def test_main(self):
+        server = Server()
+        self.assertTrue(isinstance(server.pw_map, Mapa))
+        self.assertTrue(isinstance(server.score, Score))
+        self.assertTrue(isinstance(server.hcriat, HandlerCriaturas))
 
     def test_login_blue(self):
         player, others, score, pw_map = create_player(1, self.hcriat)
