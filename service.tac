@@ -1,5 +1,3 @@
-import os
-
 from twisted.application import service, internet
 
 from server.main import Server
