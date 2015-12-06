@@ -100,6 +100,9 @@ class Mapa(object):
         jugador.mover(x, y)
         return jugador
 
+    def del_object(self, entity):
+        self.clean_coor(*entity.get_coor())
+
     def clean_coor(self, x, y):
         self.dicMapa[y, x] = 0
 
