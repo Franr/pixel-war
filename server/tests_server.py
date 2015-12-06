@@ -1,12 +1,9 @@
-# import sys
-# import os
-
-# sys.path += os.path.join(os.path.dirname(__file__), '..')
-
-from twisted.trial import unittest
+# from twisted.trial.unittest import TestCase
+from unittest import TestCase
 
 from main import Server
-from src.exceptions import InvalidMovementDirection, BlockedPosition, InvalidShootDirection
+from src.exceptions import (
+    InvalidMovementDirection, BlockedPosition, InvalidShootDirection, CantShoot, CantMove)
 from src.mapa import Mapa
 from src.score import Score
 from src.protocol import (
@@ -15,7 +12,7 @@ from src.protocol import (
 from src.handlers import HandlerCriaturas
 
 
-class ActionsTest(unittest.TestCase):
+class ActionsTest(TestCase):
 
     def setUp(self):
         self.pw_map = Mapa("mapa")
@@ -50,16 +47,24 @@ class ActionsTest(unittest.TestCase):
             before_x, before_y = player.get_coor()
             moved_player = move_player(player.get_uid(), d, self.hcriat)
             self.assertTrue(before_x != moved_player.x or before_y != moved_player.y)
+            player.bloqM.unblock()
 
     def test_move_invalid(self):
         player, others, score, pw_map = create_player(1, self.hcriat)
         self.assertRaises(
             InvalidMovementDirection, move_player, player.get_uid(), 'bad_direction', self.hcriat)
 
+    def test_cant_move_exception(self):
+        player, others, score, pw_map = create_player(1, self.hcriat)
+        player.vivo = False
+        self.assertRaises(
+            CantMove, move_player, player.get_uid(), 'n', self.hcriat)
+
     def test_blocking_position(self):
         player, others, score, pw_map = create_player(1, self.hcriat)
         for d in ('o', 'o', 'o'):
             move_player(player.get_uid(), d, self.hcriat)
+            player.bloqM.unblock()
         self.assertRaises(BlockedPosition, move_player, player.get_uid(), 'o', self.hcriat)
 
     def test_multiple_players(self):
@@ -73,11 +78,13 @@ class ActionsTest(unittest.TestCase):
         for d in ('n', 's', 'o', 'e', 'no', 'ne', 'so', 'se'):
             player, shoot_handler = shoot_action(player.get_uid(), d, self.hcriat, None, None)
             self.assertIsNot(shoot_handler, None)
+            player.bloqD.unblock()
 
     def test_shoot_bad_direction(self):
         player, others, score, pw_map = create_player(1, self.hcriat)
         self.assertRaises(
-            InvalidShootDirection, shoot_action, player.get_uid(), 'bad_dir', self.hcriat, None, None)
+            InvalidShootDirection, shoot_action, player.get_uid(), 'bad_dir', self.hcriat, None,
+            None)
 
     def test_shoot_update(self):
         player, others, score, pw_map = create_player(1, self.hcriat)
@@ -112,6 +119,13 @@ class ActionsTest(unittest.TestCase):
         self.assertFalse(shoot_handler.update())  # hit the enemy
         self.assertLess(player2.vida, healt_before)
 
+    def test_cant_shoot_exception(self):
+        player1, others, score, pw_map = create_player(1, self.hcriat)
+        callback = lambda x, y: (x, y)  # dummy callback
+        player1.vivo = False
+        self.assertRaises(
+            CantShoot, shoot_action, player1.get_uid(), 'e', self.hcriat, callback, None)
+
     def test_kill_and_revive_enemy(self):
         player1, others, score, pw_map = create_player(1, self.hcriat)
         player2, others, score, pw_map = create_player(2, self.hcriat)
@@ -127,7 +141,7 @@ class ActionsTest(unittest.TestCase):
         self.assertTrue(player2.vivo)
         self.assertEqual(player2.vida, HandlerCriaturas.VIDA_MAX)
 
-    def test_score(self):
+    def test_score_from_blue(self):
         player1, others, score, pw_map = create_player(1, self.hcriat)
         player2, others, score, pw_map = create_player(2, self.hcriat)
         pw_map.move_player(player2, player1.x+1, player1.y)
@@ -139,6 +153,19 @@ class ActionsTest(unittest.TestCase):
         self.assertEqual(self.score.blue_score, 0)
         shoot_handler.update()
         self.assertEqual(self.score.blue_score, 1)
+
+    def test_score_from_red(self):
+        player1, others, score, pw_map = create_player(2, self.hcriat)
+        player2, others, score, pw_map = create_player(1, self.hcriat)
+        pw_map.move_player(player2, player1.x+1, player1.y)
+        callback = lambda x, y: (x, y)  # dummy callback
+        die_callback = lambda uid: increase_score(uid, self.hcriat)
+        player, shoot_handler = shoot_action(
+            player1.get_uid(), 'e', self.hcriat, callback, die_callback)
+        player2.vida = 1
+        self.assertEqual(self.score.red_score, 0)
+        shoot_handler.update()
+        self.assertEqual(self.score.red_score, 1)
 
     def test_restart_round(self):
         player1, others, score, pw_map = create_player(1, self.hcriat)
