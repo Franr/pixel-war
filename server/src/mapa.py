@@ -92,9 +92,6 @@ class Mapa(object):
         elif jugador.get_team() == 2:
             pos = self.get_red()
 
-        if not pos:
-            raise exceptions.TeamBasePositionNotFound
-
         x, y = pos
         self.set_object(jugador, x, y)
         jugador.mover(x, y)
@@ -119,6 +116,7 @@ class Mapa(object):
             ny = y + pos[1]
             if not self.pos_is_blocked(nx, ny):
                 return nx, ny
+        raise exceptions.TeamBasePositionNotFound
 
     def gen_mapa_char(self):
         # TODO: change this -> just send the 2d array

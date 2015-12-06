@@ -3,7 +3,8 @@ from unittest import TestCase
 
 from main import Server
 from src.exceptions import (
-    InvalidMovementDirection, BlockedPosition, InvalidShootDirection, CantShoot, CantMove)
+    InvalidMovementDirection, BlockedPosition, InvalidShootDirection, CantShoot, CantMove,
+    TeamBasePositionNotFound, PlayerDoesNotExist)
 from src.mapa import Mapa
 from src.score import Score
 from src.protocol import (
@@ -67,11 +68,22 @@ class ActionsTest(TestCase):
             player.bloqM.unblock()
         self.assertRaises(BlockedPosition, move_player, player.get_uid(), 'o', self.hcriat)
 
-    def test_multiple_players(self):
+    def test_multiple_players_blue(self):
         player, others, score, pw_map = create_player(1, self.hcriat)
         self.assertEqual(others, [])
         player, others, score, pw_map = create_player(1, self.hcriat)
         self.assertEqual(len(others), 1)
+
+    def test_multiple_players_red(self):
+        player, others, score, pw_map = create_player(2, self.hcriat)
+        self.assertEqual(others, [])
+        player, others, score, pw_map = create_player(2, self.hcriat)
+        self.assertEqual(len(others), 1)
+
+    def test_full_team_base(self):
+        for i in range(9):
+            create_player(2, self.hcriat)
+        self.assertRaises(TeamBasePositionNotFound, create_player, 2, self.hcriat)
 
     def test_shoot_directions(self):
         player, others, score, pw_map = create_player(1, self.hcriat)
@@ -195,3 +207,6 @@ class ActionsTest(TestCase):
         # score
         self.assertEqual(new_score[0], 0)
         self.assertEqual(new_score[1], 0)
+
+    def test_wrong_player_uid(self):
+        self.assertRaises(PlayerDoesNotExist, self.hcriat.get_creature_by_uid, 157)
