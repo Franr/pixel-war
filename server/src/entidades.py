@@ -62,7 +62,6 @@ class Jugador(Criatura):
         self.bloqD = None
 
     def get_data(self):
-        # devuelve los datos necesarios para el paquete de creacion de jugador
         return [self.get_uid(), self.team, self.x, self.y, self.vida, self.vida_max]
 
     def mover(self, x, y):
