@@ -1,4 +1,3 @@
-# from twisted.trial.unittest import TestCase
 from unittest import TestCase
 
 from main import Server
@@ -36,6 +35,19 @@ class ActionsTest(TestCase):
     def test_login_red(self):
         player, others, score, pw_map = create_player(2, self.hcriat)
         self.assertEqual(player.get_team(), 2)
+
+    def test_player_get_data(self):
+        player, others, score, pw_map = create_player(1, self.hcriat)
+        self.assertEqual(player.get_data(), [3, 1, 34, 23, 100, 100])
+
+    def test_wrong_player_uid(self):
+        self.assertRaises(PlayerDoesNotExist, self.hcriat.get_creature_by_uid, 157)
+
+    def test_lost_connection_handler(self):
+        player, others, score, pw_map = create_player(1, self.hcriat)
+        uid = player.uid
+        self.hcriat.del_creature_by_uid(uid)
+        self.assertRaises(PlayerDoesNotExist, self.hcriat.get_creature_by_uid, uid)
 
     def test_teleport_player(self):
         player, others, score, pw_map = create_player(1, self.hcriat)
@@ -207,6 +219,3 @@ class ActionsTest(TestCase):
         # score
         self.assertEqual(new_score[0], 0)
         self.assertEqual(new_score[1], 0)
-
-    def test_wrong_player_uid(self):
-        self.assertRaises(PlayerDoesNotExist, self.hcriat.get_creature_by_uid, 157)
