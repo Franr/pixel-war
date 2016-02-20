@@ -8,12 +8,12 @@ class Mapa(object):
 
     # Dividir en 2 clases:
     # el mapa y el handler del mapa
-    
+
     # atencion:
     # internamente la clase maneja las coordenadas primero a "Y" y despues a "X"
     # por la manera en que se splitea el mapa desde el archivo.
     # pero las llamadas a los metodos desde afuera se hace igual que siempre: x, y.
-    
+
     # El mapa solo contiene ids en sus arrays:
     # = 0  libre
     # = 1  bloque
@@ -21,13 +21,15 @@ class Mapa(object):
 
     def __init__(self, nombre):
         self.nombre = nombre
-        self.mapaChar = None
+        self.array_map = []
+        # medidas del mapa
+        self.dy = 0
+        self.dx = 0
         # cargamos los mapas numericos
         maps_folder = os.path.dirname(__file__) + '/../maps'
         sec = self.parse(Archivo(maps_folder, nombre + ".pwm", "r").buffer)
         if sec:
             self.gen_mapa_numerico(sec)
-            self.gen_mapa_char()
 
     def parse(self, sec):
         # Dividimos c/linea por las comas
@@ -40,10 +42,8 @@ class Mapa(object):
         return sec
 
     def gen_mapa_numerico(self, mapa):
-        self.dicMapa = {}
-        self.compacto = []
         for y in range(len(mapa)):
-            fila_compacta = ""
+            row = []
             for x in range(len(mapa[y])):
                 mid = int(mapa[y][x])
                 if mid == 2:
@@ -54,16 +54,14 @@ class Mapa(object):
                     # respawn azul
                     self.set_azul(x, y)
                     mid = 0
-                self.dicMapa[y, x] = mid
-                fila_compacta += str(mid)
-            # el compacto se usa para enviar el mapa en formato binario
-            self.compacto.append(fila_compacta)
+                row.append(mid)
+            self.array_map.append(row)
 
     def get_id_by_pos(self, x, y):
-        return self.dicMapa[y, x]
+        return self.array_map[y][x]
 
     def set_object(self, objeto, x, y):
-        self.dicMapa[y, x] = objeto.get_uid()
+        self.array_map[y][x] = objeto.get_uid()
 
     def set_red(self, x, y):
         self.x_rojo = x
@@ -101,10 +99,10 @@ class Mapa(object):
         self.clean_coor(*entity.get_coor())
 
     def clean_coor(self, x, y):
-        self.dicMapa[y, x] = 0
+        self.array_map[y][x] = 0
 
     def pos_is_blocked(self, x, y):
-        return self.dicMapa[y, x] >= 1
+        return self.array_map[y][x] >= 1
 
     def get_empty_place(self, x, y):
         cuadrante = [[-1, -1], [0, -1], [1, -1],
@@ -118,22 +116,6 @@ class Mapa(object):
                 return nx, ny
         raise exceptions.TeamBasePositionNotFound
 
-    def gen_mapa_char(self):
-        # TODO: change this -> just send the 2d array
-        long_fila = None
-        filas = ""
-        for y in self.compacto:
-            # la longitud de fila se calcula 1 sola vez, ya que el mapa "debe" ser rectangular
-            if not long_fila:
-                # al ser char cada longitud de fila: tiene que ser menor a 255
-                long_fila = chr(len(y))
-            # pasamos a char
-            fila_char = ""
-            for i in range(0, len(y), 8):
-                fila_char += chr(int(y[i:i+8], 2))
-            filas += fila_char
-        self.mapaChar = long_fila + filas
-
     def move_player(self, jugador, x, y):
         antx, anty = jugador.get_coor()
         jugador.mover(x, y)
@@ -141,6 +123,7 @@ class Mapa(object):
         self.set_object(jugador, x, y)
 
     def clean_map(self):
-        for (y, x) in self.dicMapa:
-            if self.dicMapa[y, x] != 1:
-                self.dicMapa[y, x] = 0
+        for y in range(len(self.array_map)):
+            for x in range(len(self.array_map[y])):
+                if self.array_map[y][x] != 1:
+                    self.array_map[y][x] = 0

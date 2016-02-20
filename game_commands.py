@@ -20,7 +20,7 @@ class UID(Command):
 
 
 class SendMap(Command):
-    arguments = [('sec_map', String())]  # use dict maybe?
+    arguments = [('sec_map', ListOf(ListOf(Integer())))]
     response = [('ok', Integer())]
 
 

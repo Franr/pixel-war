@@ -4,32 +4,17 @@ from constantes import SQM, C_BLOQUE, C_FONDO
 
 class Mapa(object):
 
-    def __init__(self, sec):
+    def __init__(self, array_map):
         self.dicMapa = {}
         # calculamos las dimensiones del mapa
-        # primer caracter -> longitud de columnas
-        self.x = ord(sec[0])
-        sec = sec[1:]
-        # longitud de fila = todas las celdas divido longitud de columna
-        # cada char contiene 8 ids
-        self.y = len(sec) * 8 / self.x        
-        # paramos los chars a enteros, y de enteros a binarios
-        sec = [str(bin(ord(i))[2:]).rjust(8, "0") for i in sec]
-        filas = []
-        i = 0
-        while i < len(sec):
-            fila = ""
-            while len(fila) < self.x:
-                fila += sec[i]
-                i += 1
-            filas.append(fila)
-
+        self.y = len(array_map)
+        self.x = len(array_map[0])
         # generamos la superficie que vamos a usar para dibujar
         self.surf = pygame.Surface((self.x * SQM, self.y * SQM))
         self.surf.fill((255, 255, 255))
-        for i in range(len(filas)):
-            for e in range(len(filas[i])):
-                obj_id = int(filas[i][e])
+        for i in range(len(array_map)):
+            for e in range(len(array_map[i])):
+                obj_id = int(array_map[i][e])
                 if obj_id:
                     bloq = "b"
                     color = C_BLOQUE

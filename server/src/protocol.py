@@ -61,7 +61,7 @@ class PWProtocol(amp.AMP):
         player, other_players, score, pw_map = create_player(team, self.hcriat)
         self.factory.peers[self] = player
         # map
-        self.send_client(SendMap, sec_map=pw_map.mapaChar)
+        self.send_client(SendMap, sec_map=pw_map.array_map)
         # create new player on all the clients
         self.send_client(CreateObject, broadcast=True, obj_data=player.get_data())
         # create all the players on the new client
