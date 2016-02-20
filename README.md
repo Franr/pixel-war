@@ -5,3 +5,4 @@
 
 A server/client 2D shooter using Twisted + Pygame
 
+Docker image: https://hub.docker.com/r/franr/pixel-war/
