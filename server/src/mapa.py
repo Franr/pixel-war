@@ -22,6 +22,8 @@ class Mapa(object):
     def __init__(self, nombre):
         self.nombre = nombre
         self.array_map = []
+        # team respawn
+        self.x_rojo, self.y_rojo, self.x_azul, self.y_azul = None, None, None, None
         # medidas del mapa
         self.dy = 0
         self.dx = 0

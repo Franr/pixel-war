@@ -77,7 +77,9 @@ class PWProtocol(amp.AMP):
         except exceptions.CantShoot:
             pass
         else:
-            self.send_client(PlayerShoot, broadcast=True, uid=uid, direction=direction, x=jug.x, y=jug.y)
+            self.send_client(
+                PlayerShoot, broadcast=True, uid=uid, direction=direction, x=jug.x, y=jug.y
+            )
         return {'ok': 1}
 
     @RestartRound.responder
@@ -169,7 +171,9 @@ def increase_score(uid, hcriat):
 
 
 def restart_round(uid, hcriat):
-    jug = hcriat.get_creature_by_uid(uid)  # TODO: round leader validation?
+    jug = hcriat.get_creature_by_uid(uid)
+    if not jug:  # TODO: validate that the player is the round leader
+        return
     hcriat.score.restart()
     new_players = hcriat.restart_players()
     new_score = hcriat.get_score()

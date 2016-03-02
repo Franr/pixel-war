@@ -12,6 +12,10 @@ from src.protocol import (
 from src.handlers import HandlerCriaturas
 
 
+def callback(*args):  # dummy callback
+    return args
+
+
 class ActionsTest(TestCase):
 
     def setUp(self):
@@ -136,7 +140,6 @@ class ActionsTest(TestCase):
         player1, others, score, pw_map = create_player(1, self.hcriat)
         player2, others, score, pw_map = create_player(2, self.hcriat)
         pw_map.move_player(player2, player1.x+2, player1.y)
-        callback = lambda x, y: (x, y)  # dummy callback
         player, shoot_handler = shoot_action(player1.get_uid(), 'e', self.hcriat, callback, None)
         healt_before = player2.vida
         self.assertTrue(shoot_handler.update())  # move 1 sqm
@@ -145,7 +148,6 @@ class ActionsTest(TestCase):
 
     def test_cant_shoot_exception(self):
         player1, others, score, pw_map = create_player(1, self.hcriat)
-        callback = lambda x, y: (x, y)  # dummy callback
         player1.vivo = False
         self.assertRaises(
             CantShoot, shoot_action, player1.get_uid(), 'e', self.hcriat, callback, None)
@@ -154,10 +156,8 @@ class ActionsTest(TestCase):
         player1, others, score, pw_map = create_player(1, self.hcriat)
         player2, others, score, pw_map = create_player(2, self.hcriat)
         pw_map.move_player(player2, player1.x+1, player1.y)
-        callback = lambda x, y: (x, y)  # dummy callback
-        die_callback = lambda x: x  # dummy callback
         player, shoot_handler = shoot_action(
-            player1.get_uid(), 'e', self.hcriat, callback, die_callback)
+            player1.get_uid(), 'e', self.hcriat, callback, callback)
         player2.vida = 1
         shoot_handler.update()
         self.assertFalse(player2.vivo)
@@ -168,9 +168,11 @@ class ActionsTest(TestCase):
     def test_score_from_blue(self):
         player1, others, score, pw_map = create_player(1, self.hcriat)
         player2, others, score, pw_map = create_player(2, self.hcriat)
+
+        def die_callback(uid):
+            return increase_score(uid, self.hcriat)
+
         pw_map.move_player(player2, player1.x+1, player1.y)
-        callback = lambda x, y: (x, y)  # dummy callback
-        die_callback = lambda uid: increase_score(uid, self.hcriat)
         player, shoot_handler = shoot_action(
             player1.get_uid(), 'e', self.hcriat, callback, die_callback)
         player2.vida = 1
@@ -181,9 +183,11 @@ class ActionsTest(TestCase):
     def test_score_from_red(self):
         player1, others, score, pw_map = create_player(2, self.hcriat)
         player2, others, score, pw_map = create_player(1, self.hcriat)
+
+        def die_callback(uid):
+            return increase_score(uid, self.hcriat)
+
         pw_map.move_player(player2, player1.x+1, player1.y)
-        callback = lambda x, y: (x, y)  # dummy callback
-        die_callback = lambda uid: increase_score(uid, self.hcriat)
         player, shoot_handler = shoot_action(
             player1.get_uid(), 'e', self.hcriat, callback, die_callback)
         player2.vida = 1
