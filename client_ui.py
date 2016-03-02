@@ -40,7 +40,7 @@ class Juego(object):
         if not self.teclado.update():
             self.quit()
 
-    def comenzar(self):
+    def activate_io_handlers(self):
         self.pantalla.activar()
         self.teclado.activar()
         self.mouse.activar()
@@ -76,6 +76,4 @@ class Juego(object):
 if __name__ == '__main__':
     team = input('1 - blue ; 2 - red\n')
     ip = raw_input('IP: (default is 127.0.0.1)\n') or '127.0.0.1'
-    tutum = 'pixel-war-42e151b5.franr.svc.tutum.io'
-    digitalocean = '107.170.76.156'
     Juego(ip, team)

@@ -44,10 +44,20 @@ class Fuente(object):
     def __init__(self, size):
         pygame.font.init()
         self.size = size
-        self.nombre = "cubicfive10.ttf"
+        self.nombre = "cubicfive10.ttf"  # TODO: move it to constants/config file
         ruta = os.path.join("client", self.nombre)
         self.fuente = pygame.font.Font(ruta, self.size)
 
-    def render(self, texto, color):
-        """ Devuelve un surface con el texto y color indicado """
-        return self.fuente.render(texto, False, color)
+    def render(self, text, color):
+        """Return a surface with the given text and color
+
+        :type text: str
+        :param text: The text to be rendered
+
+        :type color: tuple
+        :param color: The color of the text
+
+        :rtype: Surface
+        :return: Returns a Surface with the text in the selected color
+        """
+        return self.fuente.render(text, False, color)

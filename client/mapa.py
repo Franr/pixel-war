@@ -2,33 +2,37 @@ import pygame
 from constantes import SQM, C_BLOQUE, C_FONDO
 
 
-class Mapa(object):
+block_colors = {
+    'b': C_BLOQUE,
+    'n': C_FONDO
+}
+
+
+class MapLogic(object):
 
     def __init__(self, array_map):
         self.dicMapa = {}
-        # calculamos las dimensiones del mapa
+        # calculating the map dimensions
         self.y = len(array_map)
         self.x = len(array_map[0])
-        # generamos la superficie que vamos a usar para dibujar
-        self.surf = pygame.Surface((self.x * SQM, self.y * SQM))
-        self.surf.fill((255, 255, 255))
+        # generate the map structure
+        self._pre_generate_surf()
         for i in range(len(array_map)):
             for e in range(len(array_map[i])):
                 obj_id = int(array_map[i][e])
-                if obj_id:
-                    bloq = "b"
-                    color = C_BLOQUE
-                else:
-                    bloq = "n"
-                    color = C_FONDO
+                bloq = 'b' if obj_id else 'n'
                 self.dicMapa[i, e] = (bloq, obj_id)
-                rect = pygame.Rect(e * SQM, i * SQM, 20, 20)
-                pygame.draw.rect(self.surf, color, rect)
-        self.surf = self.surf.convert()
+                self._render_sqm(e, i, bloq)
+        self._post_generate_surf()
 
-    def desborda(self, x, y):
-        """ devuelve True si la posicion (x, y) desborda del mapa """
-        return ((x < 0) or (y < 0)) or ((x >= self.x) or (y >= self.y))
+    def _pre_generate_surf(self):
+        pass
+
+    def _render_sqm(self, x, y, bloq_type):
+        pass
+
+    def _post_generate_surf(self):
+        pass
 
     def is_blocking_position(self, x, y):
         return self.dicMapa[y, x][0] == "b"
@@ -52,3 +56,16 @@ class Mapa(object):
                 return None
             else:
                 return self.dicMapa[y, x][1]
+
+
+class Mapa(MapLogic):
+
+    def _pre_generate_surf(self):
+        self.surf = pygame.Surface((self.x * SQM, self.y * SQM))
+
+    def _render_sqm(self, x, y, bloq_type):
+        rect = pygame.Rect(x*SQM, y*SQM, 20, 20)
+        pygame.draw.rect(self.surf, block_colors[bloq_type], rect)
+
+    def _post_generate_surf(self):
+        self.surf = self.surf.convert()

@@ -1,78 +1,58 @@
-import pygame
-
-
-class Objeto(object):
+class Positionable(object):
 
     def __init__(self, x, y):
-        self.x = x
-        self.y = y
-        self.rect = self.get_rect()
+        self.x, self.y = x, y
 
     def get_coor(self):
         return self.x, self.y
 
-    def get_rect(self):
-        return pygame.Rect(self.x, self.y, 7, 7)
-
     def update(self, x, y):
-        self.x = x
-        self.y = y
-
-    def colisiona(self, rects):
-        return self.rect.collidelist(rects) != -1
+        self.x, self.y = x, y
 
 
-class HandlerCriaturas(object):
+class HandlerCreatures(object):
 
     def __init__(self):
+        self.my_team = None
         self.azul = 0
         self.rojo = 0
-        self.ronda = 0
         self.jugadores = {}
-        self.enemigos = {}
 
-    def add_player(self, jugador):
-        self.jugadores[jugador.get_uid()] = jugador
-        
-    def add_enemy(self, enemigo):
-        self.enemigos[enemigo.get_uid()] = enemigo
-        
+    def create_player(self, uid, x, y, vida, vida_max, equipo):
+        player = Player(uid, x, y, vida, vida_max, equipo)
+        self.jugadores[player.get_uid()] = player
+        return player
+
     def get_players(self):
         return self.jugadores.values()
-        
+
     def get_enemies(self):
-        return self.enemigos.values()
-              
+        return [j for j in self.jugadores.values() if j.equipo != self.my_team]
+
     def get_creature_by_uid(self, uid):
         if uid in self.jugadores:
             return self.jugadores[uid]
-        elif uid in self.enemigos:
-            return self.enemigos[uid]
         else:
             print("Id invalida:" + str(uid))
-            return None
 
     def del_creature_by_id(self, uid):
         if uid in self.jugadores:
-            self.jugadores.pop(uid)
-        elif uid in self.enemigos:
-            self.enemigos.pop(uid)
+            return self.jugadores.pop(uid)
         else:
             print("Id invalida:" + str(uid))
 
     def reset_all(self):
         [j.reset() for j in self.jugadores.values()]
 
-    def set_score(self, azul, rojo, ronda):
+    def set_score(self, azul, rojo):
         self.azul = azul
         self.rojo = rojo
-        self.ronda = ronda
 
 
-class Criatura(Objeto):
+class Creature(Positionable):
 
     def __init__(self, uid, x, y, vida, vida_max, equipo):
-        Objeto.__init__(self, x, y)
+        super(Creature, self).__init__(x, y)
         self.uid = uid
         self.vida = Vida(vida, vida_max)
         self.equipo = equipo
@@ -113,10 +93,10 @@ class Criatura(Objeto):
         self.vivo = False
 
 
-class Jugador(Criatura):
+class Player(Creature):
 
-    def __init__(self, uid, x, y, vida, vida_max, equipo):
-        Criatura.__init__(self, uid, x, y, vida, vida_max, equipo)
+    def __init__(self, uid, x, y, vida, vida_max, team):
+        super(Player, self).__init__(uid, x, y, vida, vida_max, team)
         self.es_principal = False
 
     def es_principal(self):
@@ -126,8 +106,7 @@ class Jugador(Criatura):
 class Vida(object):
 
     def __init__(self, hp, max_hp):
-        self.max = max_hp
-        self.actual = hp
+        self.actual, self.max = hp, max_hp
 
     def hit(self, cant):
         if self.actual - cant <= 0:

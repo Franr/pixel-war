@@ -6,8 +6,6 @@ from game_commands import (
 
 from bala import Bala
 from bloqueos import BloqueoDisp
-from criaturas import Jugador
-from mapa import Mapa
 
 
 class PWProtocol(amp.AMP):
@@ -31,13 +29,12 @@ class PWProtocol(amp.AMP):
         principal = self.hcriat.get_creature_by_uid(self.my_uid)
         principal.es_principal = True
         self.juego.set_principal(principal)
-        self.juego.comenzar()
+        self.juego.activate_io_handlers()
 
     @CreateObject.responder
     def create_object(self, obj_data):
         uid, equipo, x, y, vida, vida_max = obj_data
-        player = Jugador(uid, x, y, vida, vida_max, equipo)
-        self.hcriat.add_player(player)
+        player = self.hcriat.create_player(uid, x, y, vida, vida_max, equipo)
         self.mapa.set_creature(player, player.x, player.y)
         print 'jugador creado:', uid, "en:", x, y
         return {'ok': 1}
@@ -51,8 +48,7 @@ class PWProtocol(amp.AMP):
     @SendMap.responder
     def send_map(self, sec_map):
         # receiving map on client
-        self.mapa = Mapa(sec_map)
-        self.juego.pantalla.dibujar.set_map(self.mapa)
+        self.mapa = self.juego.create_map(sec_map)
         return {'ok': 1}
 
     @MoveObject.responder
@@ -93,7 +89,7 @@ class PWProtocol(amp.AMP):
 
     @UpdateScore.responder
     def update_score(self, blue, red):
-        self.hcriat.set_score(blue, red, 1)  # TODO: round # is deprecated
+        self.hcriat.set_score(blue, red)
         return {'ok': 1}
 
     def disparar(self, direction):

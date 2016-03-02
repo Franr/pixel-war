@@ -1,7 +1,18 @@
 from threading import Thread
 import time
 
-from criaturas import Objeto
+from criaturas import Positionable
+
+numeric_dir = {
+    'e': (1, 0),
+    'se': (1, 1),
+    's': (0, 1),
+    'so': (-1, 1),
+    'o': (-1, 0),
+    'no': (-1, -1),
+    'n': (0, -1),
+    'ne': (1, -1),
+}
 
 
 class HandlerBalas(Thread):
@@ -28,17 +39,17 @@ class HandlerBalas(Thread):
             time.sleep(.1)
 
 
-class Bala(Thread, Objeto):
+class Bala(Thread, Positionable):
 
     def __init__(self, uid, x, y, direction, equipo, juego):
         Thread.__init__(self)
-        Objeto.__init__(self, x, y)
+        Positionable.__init__(self, x, y)
         self.uid = uid
         self.dir = direction
         self.equipo = equipo
         self.juego = juego
         self.seguir = True
-        self.mapa = juego.pantalla.dibujar.mapa
+        self.mapa = juego.conexion.cf.protocol.mapa  # horrible
         self.delay = 0.05
         # go for it!
         self.start()
@@ -53,30 +64,11 @@ class Bala(Thread, Objeto):
         del self
 
     def calc_desplazamiento(self):
-        movx = 0
-        movy = 0
-        dist = 1
-        if self.dir == 'e':
-            movx = dist
-        elif self.dir == 'se':
-            movx = dist
-            movy = dist
-        elif self.dir == 's':
-            movy = dist
-        elif self.dir == 'so':
-            movx = -dist
-            movy = dist
-        elif self.dir == 'o':
-            movx = -dist
-        elif self.dir == 'no':
-            movx = -dist
-            movy = -dist
-        elif self.dir == 'n':
-            movy = -dist
-        elif self.dir == 'ne':
-            movx = dist
-            movy = -dist
-        return movx, movy
+        return numeric_dir[self.dir]
+
+    def next_pos(self):
+        mx, my = self.calc_desplazamiento()
+        return (self.x + mx, self.y + my), (mx, my)
 
     def bala_update(self):
         # cada bala revisa sus colisiones contra las criaturas que:
