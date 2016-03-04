@@ -1,8 +1,6 @@
 import pygame
 from pygame import K_UP, K_DOWN, K_LEFT, K_RIGHT, K_F1, K_ESCAPE
 
-from bloqueos import BloqueoMov
-
 
 class TecladoHandler(object):
 
@@ -19,21 +17,13 @@ class TecladoHandler(object):
             return False
         if self.enabled:
             if tecla[K_UP]:
-                if not BloqueoMov.block:
-                    BloqueoMov()
-                    self.juego.conexion.cf.protocol.move('n')
+                self.juego.conexion.cf.protocol.move('n')
             elif tecla[K_DOWN]:
-                if not BloqueoMov.block:
-                    BloqueoMov()
-                    self.juego.conexion.cf.protocol.move('s')
+                self.juego.conexion.cf.protocol.move('s')
             elif tecla[K_LEFT]:
-                if not BloqueoMov.block:
-                    BloqueoMov()
-                    self.juego.conexion.cf.protocol.move('o')
+                self.juego.conexion.cf.protocol.move('o')
             elif tecla[K_RIGHT]:
-                if not BloqueoMov.block:
-                    BloqueoMov()
-                    self.juego.conexion.cf.protocol.move('e')
+                self.juego.conexion.cf.protocol.move('e')
             elif tecla[K_F1]:
                 self.juego.conexion.cf.protocol.restart_round()
         return True

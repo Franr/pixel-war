@@ -1,37 +1,26 @@
-import threading
-import time
+from twisted.internet import reactor
 
 
-class Bloqueo(threading.Thread):
+class Bloqueo(object):
 
-    def __init__(self, delay):
-        threading.Thread.__init__(self)
-        self.delay = delay
-        self.bloquear()
-        self.start()
-        
-    def bloquear(self):
+    def __init__(self):
+        self._block()
+        reactor.callLater(self.delay, self._unblock)
+
+    def _block(self):
         self.__class__.block = True
-        
-    def desbloquear(self):
+
+    def _unblock(self):
         self.__class__.block = False
-    
-    def run(self):
-        time.sleep(self.delay)
-        self.desbloquear()
 
 
 class BloqueoMov(Bloqueo):
 
     block = False
-    
-    def __init__(self):
-        Bloqueo.__init__(self, 0.15)
+    delay = 0.15
 
 
 class BloqueoDisp(Bloqueo):
-    
+
     block = False
-    
-    def __init__(self):
-        Bloqueo.__init__(self, 0.10)
+    delay = 0.10

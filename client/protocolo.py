@@ -5,7 +5,7 @@ from game_commands import (
     PlayerRevive, LogoutPlayer, UpdateScore, RestartRound)
 
 from bala import Bala
-from bloqueos import BloqueoDisp
+from bloqueos import BloqueoDisp, BloqueoMov
 
 
 class PWProtocol(amp.AMP):
@@ -105,7 +105,9 @@ class PWProtocol(amp.AMP):
             self.hcriat.del_creature_by_id(uid)
 
     def move(self, direction):
-        self.callRemote(Move, uid=self.my_uid, direction=direction)
+        if not BloqueoMov.block:
+            self.callRemote(Move, uid=self.my_uid, direction=direction)
+            BloqueoMov()
 
     def restart_round(self):
         self.callRemote(RestartRound, uid=self.my_uid)
