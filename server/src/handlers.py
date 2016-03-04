@@ -1,24 +1,20 @@
-import time
-
 from twisted.internet import reactor
 
 from entidades import Jugador, Bala
 from exceptions import PlayerDoesNotExist
 
 
-class HandlerId(object):  # TODO: use a generator
-
-    def __init__(self):
-        # el id 0 se reserva para los espacios vacios
-        # el id 1 se reserva para los bloques
-        self.uid = 2
-        
-    def next_id(self):
-        self.uid += 1
-        return self.uid
+def id_generator():
+    """
+    the id 0 and 1 are reserved for empty (0) and blocking (1) SQM's
+    """
+    num = 2
+    while True:
+        yield num
+        num += 1
 
 
-class HandlerCriaturas:
+class CreaturesHandler:
 
     VIDA_MAX = 100
     pw_map = None
@@ -28,10 +24,14 @@ class HandlerCriaturas:
 
     def __init__(self):
         self.jugadores = {}
-        self.handler_id = HandlerId()
+        self.handler_id = id_generator()
+
+    def get_team_start_position(self, team):
+        pw_map = self.get_map()
+        return pw_map.get_blue() if team == CreaturesHandler.BLUE else pw_map.get_red()
 
     def crear_jugador(self, x, y, equipo):
-        uid = self.handler_id.next_id()
+        uid = self.handler_id.next()
         # instanciamos
         j = Jugador(uid, x, y, self.VIDA_MAX, self.VIDA_MAX, equipo, self)
         self.jugadores[uid] = j
@@ -68,7 +68,7 @@ class HandlerCriaturas:
         return players
 
 
-class HandlerBala(object):
+class BulletHandler(object):
 
     def __init__(self, jug, direction, hcriat, hit_callback, die_callback):
         self.bala = Bala(jug.uid, jug.x, jug.y, direction, jug.get_team())
@@ -78,11 +78,11 @@ class HandlerBala(object):
         self.mapa = self.hcriat.get_map()
         self.jug = jug
         self.jug.block_shot()
-        reactor.callInThread(self.handle)
+        reactor.callLater(self.bala.DELAY, self.loop)
 
-    def handle(self):
-        while self.update():
-            time.sleep(self.bala.DELAY)
+    def loop(self):
+        if self.update():
+            reactor.callLater(self.bala.DELAY, self.loop)
 
     def update(self):
         # proximo movimiento
@@ -117,8 +117,3 @@ class HandlerBala(object):
                     else:
                         self.hit_callback(mid, self.bala.DMG)
                 return False
-
-
-def get_team_start_position(hcriat, team):
-    mapa = hcriat.get_map()
-    return mapa.get_blue() if team == HandlerCriaturas.BLUE else mapa.get_red()

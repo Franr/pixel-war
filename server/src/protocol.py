@@ -5,7 +5,7 @@ from game_commands import (
     Move, MoveObject, SendMap, CreateObject, CreateObjects, Login, PlayerShoot, Shoot, PlayerHit,
     PlayerRevive, LogoutPlayer, UpdateScore, RestartRound)
 import exceptions
-from server.src.handlers import HandlerBala, get_team_start_position, HandlerCriaturas
+from server.src.handlers import BulletHandler, CreaturesHandler
 
 
 def validar_dir4(direction):
@@ -103,7 +103,7 @@ class PWProtocol(amp.AMP):
 
 def create_player(team, hcriat):
     # you
-    x, y = get_team_start_position(hcriat, team)
+    x, y = hcriat.get_team_start_position(team)
     player = hcriat.crear_jugador(x, y, team)
     # the others
     other_players = [j for j in hcriat.get_players().values() if j != player]
@@ -151,7 +151,7 @@ def shoot_action(uid, direction, hcriat, hit_callback, die_callback):
     jug = hcriat.get_creature_by_uid(uid)
 
     if jug.is_live() and not jug.cant_shot():
-        shoot_handler = HandlerBala(jug, direction, hcriat, hit_callback, die_callback)
+        shoot_handler = BulletHandler(jug, direction, hcriat, hit_callback, die_callback)
         return jug, shoot_handler
     raise exceptions.CantShoot
 
@@ -163,7 +163,7 @@ def revive_player(uid, hcriat):
 
 def increase_score(uid, hcriat):
     jug = hcriat.get_creature_by_uid(uid)
-    if jug.team == HandlerCriaturas.BLUE:
+    if jug.team == CreaturesHandler.BLUE:
         hcriat.score.murio_azul()
     else:
         hcriat.score.murio_rojo()

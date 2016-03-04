@@ -9,7 +9,7 @@ from src.score import Score
 from src.protocol import (
     create_player, move_player, shoot_action, revive_player, teleport_player, increase_score,
     restart_round)
-from src.handlers import HandlerCriaturas
+from src.handlers import CreaturesHandler
 
 
 def callback(*args):  # dummy callback
@@ -21,7 +21,7 @@ class ActionsTest(TestCase):
     def setUp(self):
         self.pw_map = Mapa("mapa")
         self.score = Score()
-        self.hcriat = HandlerCriaturas()
+        self.hcriat = CreaturesHandler()
         self.hcriat.jugadores = {}
         self.hcriat.pw_map = self.pw_map
         self.hcriat.score = self.score
@@ -30,7 +30,7 @@ class ActionsTest(TestCase):
         server = Server()
         self.assertTrue(isinstance(server.pw_map, Mapa))
         self.assertTrue(isinstance(server.score, Score))
-        self.assertTrue(isinstance(server.hcriat, HandlerCriaturas))
+        self.assertTrue(isinstance(server.hcriat, CreaturesHandler))
 
     def test_login_blue(self):
         player, others, score, pw_map = create_player(1, self.hcriat)
@@ -42,7 +42,7 @@ class ActionsTest(TestCase):
 
     def test_player_get_data(self):
         player, others, score, pw_map = create_player(1, self.hcriat)
-        self.assertEqual(player.get_data(), [3, 1, 34, 23, 100, 100])
+        self.assertEqual(player.get_data(), [2, 1, 34, 23, 100, 100])
 
     def test_wrong_player_uid(self):
         self.assertRaises(PlayerDoesNotExist, self.hcriat.get_creature_by_uid, 157)
@@ -163,7 +163,7 @@ class ActionsTest(TestCase):
         self.assertFalse(player2.vivo)
         revive_player(player2.uid, self.hcriat)
         self.assertTrue(player2.vivo)
-        self.assertEqual(player2.vida, HandlerCriaturas.VIDA_MAX)
+        self.assertEqual(player2.vida, CreaturesHandler.VIDA_MAX)
 
     def test_score_from_blue(self):
         player1, others, score, pw_map = create_player(1, self.hcriat)
