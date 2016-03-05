@@ -1,19 +1,31 @@
-from unittest import TestCase
+from twisted.internet import reactor
+from twisted.trial.unittest import TestCase
+from twisted.test.proto_helpers import StringTransport
 
 from main import Server
+from src.actions import (
+    create_player, move_player, shoot_action, revive_player, teleport_player, increase_score,
+    restart_round)
 from src.exceptions import (
     InvalidMovementDirection, BlockedPosition, InvalidShootDirection, CantShoot, CantMove,
     TeamBasePositionNotFound, PlayerDoesNotExist)
+from src.handlers import CreaturesHandler
 from src.mapa import Mapa
 from src.score import Score
-from src.protocol import (
-    create_player, move_player, shoot_action, revive_player, teleport_player, increase_score,
-    restart_round)
-from src.handlers import CreaturesHandler
+from src.protocol import PWProtocol, PWProtocolFactory
+
+
+OK_RESPONSE = {'ok': 1}
 
 
 def callback(*args):  # dummy callback
     return args
+
+
+class NoDelayTransport(StringTransport):
+
+    def setTcpNoDelay(self, bla):
+        pass
 
 
 class ActionsTest(TestCase):
@@ -25,6 +37,13 @@ class ActionsTest(TestCase):
         self.hcriat.jugadores = {}
         self.hcriat.pw_map = self.pw_map
         self.hcriat.score = self.score
+
+    def tearDown(self):
+        """Cancel all the pending calls to avoid problems"""
+        pending = reactor.getDelayedCalls()
+        for p in pending:
+            if p.active():
+                p.cancel()
 
     def test_main(self):
         server = Server()
@@ -223,3 +242,49 @@ class ActionsTest(TestCase):
         # score
         self.assertEqual(new_score[0], 0)
         self.assertEqual(new_score[1], 0)
+
+
+class TestProtocol(TestCase):
+
+    def setUp(self):
+        factory = PWProtocolFactory()
+        self.pwp = PWProtocol(factory)
+        self.hcriat = CreaturesHandler()
+        self.hcriat.score = Score()
+        self.pwp.hcriat = self.hcriat
+        self.pwp.hcriat.pw_map = Mapa("mapa")
+        self.tr = NoDelayTransport()
+        self.pwp.makeConnection(self.tr)
+        self.player = self.pwp.hcriat.create_player(1, 1, 1)
+
+    def tearDown(self):
+        """Cancel all the pending calls to avoid problems"""
+        pending = reactor.getDelayedCalls()
+        for p in pending:
+            if p.active():
+                p.cancel()
+
+    def test_receive_login(self):
+        self.assertEqual(self.pwp.login(1), {'uid': 3})
+
+    def test_receive_move(self):
+        # moving a player who doesn't exists
+        self.assertRaises(PlayerDoesNotExist, self.pwp.move, 1, 'n')
+        # moving an existing player
+        self.assertEqual(self.pwp.move(self.player.uid, 'n'), OK_RESPONSE)
+        # moving a player who can't move
+        self.player.block_movement()
+        # TODO: change to a better response
+        self.assertEqual(self.pwp.move(self.player.uid, 'n'), OK_RESPONSE)
+
+    def test_receive_player_shoot(self):
+        self.assertEqual(self.pwp.player_shoot(self.player.uid, 'n'), OK_RESPONSE)
+
+    def test_restart_round(self):
+        self.assertEqual(self.pwp.restart_round(self.player.uid), OK_RESPONSE)
+
+    def test_hit(self):
+        self.assertIsNone(self.pwp.hit(self.player.uid, 10))  # TODO: check what the client receive
+
+    def test_die(self):
+        self.assertIsNone(self.pwp.die(self.player.uid))  # TODO: check what the client receive

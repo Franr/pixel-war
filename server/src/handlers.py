@@ -30,7 +30,7 @@ class CreaturesHandler:
         pw_map = self.get_map()
         return pw_map.get_blue() if team == CreaturesHandler.BLUE else pw_map.get_red()
 
-    def crear_jugador(self, x, y, equipo):
+    def create_player(self, x, y, equipo):
         uid = self.handler_id.next()
         # instanciamos
         j = Jugador(uid, x, y, self.VIDA_MAX, self.VIDA_MAX, equipo, self)
