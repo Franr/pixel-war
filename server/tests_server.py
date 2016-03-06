@@ -9,10 +9,10 @@ from src.actions import (
 from src.exceptions import (
     InvalidMovementDirection, BlockedPosition, InvalidShootDirection, CantShoot, CantMove,
     TeamBasePositionNotFound, PlayerDoesNotExist)
-from src.handlers import CreaturesHandler
+from src.handlers import CreaturesHandler, BulletHandler
 from src.mapa import Mapa
 from src.score import Score
-from src.protocol import PWProtocol, PWProtocolFactory
+from src.protocol import PWProtocolFactory
 
 
 OK_RESPONSE = {'ok': 1}
@@ -137,7 +137,7 @@ class ActionsTest(TestCase):
         player, others, score, pw_map = create_player(1, self.hcriat)
         player, shoot_handler = shoot_action(player.get_uid(), 'n', self.hcriat, None, None)
         before_y = shoot_handler.bala.y
-        shoot_handler.update()
+        shoot_handler.loop()
         self.assertEqual(before_y - 1, shoot_handler.bala.y)
 
     def test_shoot_hit_wall(self):
@@ -178,7 +178,7 @@ class ActionsTest(TestCase):
         player, shoot_handler = shoot_action(
             player1.get_uid(), 'e', self.hcriat, callback, callback)
         player2.vida = 1
-        shoot_handler.update()
+        shoot_handler.loop()
         self.assertFalse(player2.vivo)
         revive_player(player2.uid, self.hcriat)
         self.assertTrue(player2.vivo)
@@ -196,7 +196,7 @@ class ActionsTest(TestCase):
             player1.get_uid(), 'e', self.hcriat, callback, die_callback)
         player2.vida = 1
         self.assertEqual(self.score.blue_score, 0)
-        shoot_handler.update()
+        shoot_handler.loop()
         self.assertEqual(self.score.blue_score, 1)
 
     def test_score_from_red(self):
@@ -211,10 +211,14 @@ class ActionsTest(TestCase):
             player1.get_uid(), 'e', self.hcriat, callback, die_callback)
         player2.vida = 1
         self.assertEqual(self.score.red_score, 0)
-        shoot_handler.update()
+        shoot_handler.loop()
         self.assertEqual(self.score.red_score, 1)
 
     def test_restart_round(self):
+        # wrong player trying to restart
+        self.assertIsNone(restart_round(153, self.hcriat))
+
+        # real case
         player1, others, score, pw_map = create_player(1, self.hcriat)
         player2, others, score, pw_map = create_player(2, self.hcriat)
         # move both once place
@@ -247,8 +251,7 @@ class ActionsTest(TestCase):
 class TestProtocol(TestCase):
 
     def setUp(self):
-        factory = PWProtocolFactory()
-        self.pwp = PWProtocol(factory)
+        self.pwp = PWProtocolFactory().buildProtocol('localhost')
         self.hcriat = CreaturesHandler()
         self.hcriat.score = Score()
         self.pwp.hcriat = self.hcriat
@@ -271,13 +274,17 @@ class TestProtocol(TestCase):
         # moving a player who doesn't exists
         self.assertRaises(PlayerDoesNotExist, self.pwp.move, 1, 'n')
         # moving an existing player
-        self.assertEqual(self.pwp.move(self.player.uid, 'n'), OK_RESPONSE)
+        self.assertEqual(self.pwp.move(self.player.uid, 's'), OK_RESPONSE)
         # moving a player who can't move
         self.player.block_movement()
-        # TODO: change to a better response
+        # TODO: create a better response
         self.assertEqual(self.pwp.move(self.player.uid, 'n'), OK_RESPONSE)
 
     def test_receive_player_shoot(self):
+        self.assertEqual(self.pwp.player_shoot(self.player.uid, 'n'), OK_RESPONSE)
+        # testing a player who can't shot
+        self.player.block_shot()
+        # TODO: create a better response
         self.assertEqual(self.pwp.player_shoot(self.player.uid, 'n'), OK_RESPONSE)
 
     def test_restart_round(self):
@@ -288,3 +295,10 @@ class TestProtocol(TestCase):
 
     def test_die(self):
         self.assertIsNone(self.pwp.die(self.player.uid))  # TODO: check what the client receive
+
+    def test_connection_lost(self):
+        self.assertEqual(self.pwp.login(1), {'uid': 3})
+        self.assertEqual(len(self.hcriat.jugadores), 2)
+        self.pwp.connectionLost('test')
+        self.assertEqual(len(self.hcriat.jugadores), 1)
+

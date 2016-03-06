@@ -80,8 +80,9 @@ def increase_score(uid, hcriat):
 
 
 def restart_round(uid, hcriat):
-    jug = hcriat.get_creature_by_uid(uid)
-    if not jug:  # TODO: validate that the player is the round leader
+    try:
+        hcriat.get_creature_by_uid(uid)
+    except exceptions.PlayerDoesNotExist:
         return
     hcriat.score.restart()
     new_players = hcriat.restart_players()

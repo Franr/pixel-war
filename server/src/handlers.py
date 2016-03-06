@@ -102,8 +102,6 @@ class BulletHandler(object):
         else:
             # hit a creature
             c = self.hcriat.get_creature_by_uid(mid)
-            if not c:
-                return False
 
             # same team
             if self.bala.is_team(c.get_team()):
