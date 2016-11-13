@@ -105,15 +105,15 @@ class ActionsTest(TestCase):
         self.assertRaises(BlockedPosition, move_player, player.get_uid(), 'o', self.hcriat)
 
     def test_multiple_players_blue(self):
-        player, others, score, _ = create_player(Team.BLUE, self.hcriat)
+        _, others, _, _ = create_player(Team.BLUE, self.hcriat)
         self.assertEqual(others, [])
-        player, others, score, _ = create_player(Team.BLUE, self.hcriat)
+        _, others, _, _ = create_player(Team.BLUE, self.hcriat)
         self.assertEqual(len(others), 1)
 
     def test_multiple_players_red(self):
-        _, others, score, _ = create_player(Team.RED, self.hcriat)
+        _, others, _, _ = create_player(Team.RED, self.hcriat)
         self.assertEqual(others, [])
-        _, others, score, _ = create_player(Team.RED, self.hcriat)
+        _, others, _, _ = create_player(Team.RED, self.hcriat)
         self.assertEqual(len(others), 1)
 
     def test_full_team_base(self):
