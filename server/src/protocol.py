@@ -20,7 +20,7 @@ class PWProtocolFactory(Factory):
             Team.RED: [],
         }
 
-    def buildProtocol(self, addr):
+    def buildProtocol(self, _):
         return PWProtocol(self)
 
 
@@ -33,7 +33,7 @@ class PWProtocol(amp.AMP):
         self.factory = factory
         self.player_uid = None
 
-    def connectionLost(self, reason):
+    def connectionLost(self, _):
         if self.player_uid in self.factory.peers:
             self.factory.peers.pop(self.player_uid)
             self.hcriat.del_creature_by_uid(self.player_uid)

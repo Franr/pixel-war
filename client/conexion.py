@@ -12,7 +12,7 @@ class CustomClientFactory(ClientFactory):
         self.hcriat = hcriat
         self.team = team
 
-    def buildProtocol(self, addr):
+    def buildProtocol(self, _):
         self.protocol = PWProtocol(self.juego, self.hcriat, self.team)
         return self.protocol
 

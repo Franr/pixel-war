@@ -111,9 +111,9 @@ class ActionsTest(TestCase):
         self.assertEqual(len(others), 1)
 
     def test_multiple_players_red(self):
-        player, others, score, _ = create_player(Team.RED, self.hcriat)
+        _, others, score, _ = create_player(Team.RED, self.hcriat)
         self.assertEqual(others, [])
-        player, others, score, _ = create_player(Team.RED, self.hcriat)
+        _, others, score, _ = create_player(Team.RED, self.hcriat)
         self.assertEqual(len(others), 1)
 
     def test_full_team_base(self):
