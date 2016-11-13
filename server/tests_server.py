@@ -312,3 +312,7 @@ class TestProtocol(TestCase):
         self.pwp.add_bot(Team.BLUE)
         self.pwp.delete_bot(Team.BLUE)
         self.assertEqual(len(self.pwp.factory.bots[Team.BLUE]), 0)
+
+    def test_delete_non_existent_bot(self):
+        self.pwp.delete_bot(Team.BLUE)
+        self.assertEqual(len(self.pwp.factory.bots[Team.BLUE]), 0)
