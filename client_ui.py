@@ -4,33 +4,20 @@ import pygame
 from twisted.internet import reactor
 from twisted.internet.task import LoopingCall
 
-from client.bala import HandlerBalas
-from client.conexion import Conexion
-from client.criaturas import HandlerCreatures
 from client.mapa import Mapa
 from client.mouse import MouseHandler
 from client.pantalla import Pantalla
 from client.teclado import KeyboardHandler
+from generic_client import GenericClient
 
-DESIRED_FPS = 30.0  # 30 frames per second
 
+class WindowClient(GenericClient):
 
-class Juego(object):
+    DESIRED_FPS = 30.0  # 30 frames per second
 
-    # set it to False in case you need to run the reactor elsewhere
-    STANDALONE = True
-
-    def __init__(self, host, equipo):
-        self.on = True
-        self.principal = None
-        # handlers
-        self.balas = HandlerBalas(self)
-        self.hcriat = HandlerCreatures()
-        self.load_io_handlers()
-        self.conexion = Conexion(host, self, self.hcriat, equipo)
-        # loop principal
+    def run_loop(self):
         self.loop = LoopingCall(self.update)
-        self.loop.start(1.0 / DESIRED_FPS)
+        self.loop.start(1.0 / self.DESIRED_FPS)
         if self.STANDALONE:
             reactor.run()
 
@@ -43,36 +30,24 @@ class Juego(object):
         self.pantalla.update()
         self.mouse.update()
         if not self.teclado.update():
-            self.quit()
+            self.close_window()
 
     def activate_io_handlers(self):
         self.pantalla.activar()
         self.teclado.activar()
         self.mouse.activar()
 
-    def add_bullet(self, bala):
-        self.balas.add_bullet(bala)
-
-    def set_principal(self, jugador):
-        self.principal = jugador
-        self.hcriat.my_team = jugador.equipo
-        self.pantalla.set_principal(jugador)
-
-    def get_players(self):
-        return self.hcriat.get_players()
-
-    def get_bullets(self):
-        return self.balas.get_balas()
-
-    def get_score(self):
-        return self.hcriat.azul, self.hcriat.rojo
-
     def create_map(self, sequence):
         mapa = Mapa(sequence)
         self.pantalla.dibujar.set_map(mapa)
         return mapa
 
-    def quit(self):
+    def set_principal(self, player):
+        self.principal = player
+        self.hcriat.my_team = player.equipo
+        self.pantalla.set_principal(player)
+
+    def close_window(self):
         self.on = False
         pygame.quit()
         reactor.stop()
@@ -81,4 +56,4 @@ class Juego(object):
 if __name__ == '__main__':
     team = raw_input('1 - blue ; 2 - red\n') or 1
     ip = raw_input('IP: (default is 127.0.0.1)\n') or '127.0.0.1'
-    Juego(ip, int(team))
+    WindowClient(ip, int(team))
