@@ -32,7 +32,7 @@ class NoDelayTransport(StringTransport):
 class ActionsTest(TestCase):
 
     def setUp(self):
-        self.pw_map = Mapa("mapa")
+        self.pw_map = Mapa("test")
         self.score = Score()
         self.hcriat = CreaturesHandler()
         self.hcriat.jugadores = {}
@@ -62,7 +62,7 @@ class ActionsTest(TestCase):
 
     def test_player_get_data(self):
         player, _, _, _ = create_player(Team.BLUE, self.hcriat)
-        self.assertEqual(player.get_data(), [2, 1, 34, 23, 100, 100])
+        self.assertEqual(player.get_data(), [2, 1, 34, 2, 100, 100])
 
     def test_wrong_player_uid(self):
         self.assertRaises(PlayerDoesNotExist, self.hcriat.get_creature_by_uid, 157)
