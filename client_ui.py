@@ -4,7 +4,7 @@ import pygame
 from twisted.internet import reactor
 from twisted.internet.task import LoopingCall
 
-from client.mapa import Mapa
+from client.map_render import MapRender
 from client.mouse import MouseHandler
 from client.pantalla import Pantalla
 from client.teclado import KeyboardHandler
@@ -38,7 +38,7 @@ class WindowClient(GenericClient):
         self.mouse.activar()
 
     def create_map(self, sequence):
-        mapa = Mapa(sequence)
+        mapa = MapRender(sequence)
         self.pantalla.dibujar.set_map(mapa)
         return mapa
 
