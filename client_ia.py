@@ -1,11 +1,21 @@
-#!/usr/bin/env python
+from twisted.internet import reactor
+from twisted.internet.task import LoopingCall
 
-from client.mapa import MapLogic
+from client.map_logic import MapLogic
 from ia.ia import avoid_shoot, shoot_enemy, move
-from client_ui import Juego
+from generic_client import GenericClient
 
 
-class Bot(Juego):
+class Bot(GenericClient):
+
+    STANDALONE = False
+    DESIRED_FPS = 30.0  # 30 frames per second
+
+    def run_loop(self):
+        self.loop = LoopingCall(self.update)
+        self.loop.start(1.0 / self.DESIRED_FPS)
+        if self.STANDALONE:
+            reactor.run()
 
     def load_io_handlers(self):
         pass
@@ -18,15 +28,15 @@ class Bot(Juego):
     def activate_io_handlers(self):
         pass
 
-    def set_principal(self, jugador):
-        self.principal = jugador
-        self.hcriat.my_team = jugador.equipo
+    def set_principal(self, player):
+        self.principal = player
+        self.hcriat.my_team = player.equipo
+
+    def get_uid(self):
+        # TODO: this is just a hack, find a better approach
+        if self.principal:
+            return self.principal.uid
+        return 1
 
     def create_map(self, sequence):
         return MapLogic(sequence)
-
-
-if __name__ == '__main__':
-    team = input('1 - blue ; 2 - red\n')
-    ip = raw_input('IP: (default is 127.0.0.1)\n') or '127.0.0.1'
-    Bot(ip, team)

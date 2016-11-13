@@ -80,3 +80,13 @@ class UpdateScore(Command):
 class RestartRound(Command):
     arguments = [('uid', Integer())]
     response = [('ok', Integer())]
+
+
+class AddBot(Command):
+    arguments = [('team', Integer())]
+    response = [('ok', Integer())]
+
+
+class DeleteBot(Command):
+    arguments = [('team', Integer())]
+    response = [('ok', Integer())]

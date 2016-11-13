@@ -1,26 +1,25 @@
 from twisted.internet import reactor
 
 
-class Bloqueo(object):
+class Blocker(object):
 
     def __init__(self):
-        self._block()
-        reactor.callLater(self.delay, self._unblock)
+        self._block = False
 
-    def _block(self):
-        self.__class__.block = True
+    def block(self):
+        self._block = True
+        reactor.callLater(self.delay, self.unblock)
 
-    def _unblock(self):
-        self.__class__.block = False
+    def unblock(self):
+        self._block = False
+
+    def is_blocked(self):
+        return self._block
 
 
-class BloqueoMov(Bloqueo):
-
-    block = False
+class MoveBlock(Blocker):
     delay = 0.15
 
 
-class BloqueoDisp(Bloqueo):
-
-    block = False
+class FireBlock(Blocker):
     delay = 0.10

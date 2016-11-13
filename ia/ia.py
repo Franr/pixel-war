@@ -30,7 +30,7 @@ def shoot_enemy(bot, enemies, connection):
     for enemy in enemies:
         direction = get_relative_pos(bot, enemy)
         if direction:
-            connection.cf.protocol.disparar(direction)
+            connection.cf.protocol.fire(direction)
 
 
 def move(bot, connection):

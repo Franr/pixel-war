@@ -8,3 +8,6 @@ script:
   - nosetests --with-coverage --cover-package=server
 after_success:
   - coveralls
+
+notifications:
+  email: false
