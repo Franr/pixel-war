@@ -1,7 +1,7 @@
 from twisted.internet import reactor
 from twisted.internet.task import LoopingCall
 
-from client.mapa import MapLogic
+from client.map_logic import MapLogic
 from ia.ia import avoid_shoot, shoot_enemy, move
 from generic_client import GenericClient
 
