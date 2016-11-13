@@ -1,5 +1,8 @@
 import exceptions
-from handlers import BulletHandler, CreaturesHandler
+from constants import Team
+from handlers import BulletHandler
+
+from client_ia import Bot
 
 
 def validate_dir4(direction):
@@ -72,7 +75,7 @@ def revive_player(uid, hcriat):
 
 def increase_score(uid, hcriat):
     jug = hcriat.get_creature_by_uid(uid)
-    if jug.team == CreaturesHandler.BLUE:
+    if jug.team == Team.BLUE:
         hcriat.score.murio_azul()
     else:
         hcriat.score.murio_rojo()
@@ -88,3 +91,7 @@ def restart_round(uid, hcriat):
     new_players = hcriat.restart_players()
     new_score = hcriat.get_score()
     return new_players, new_score
+
+
+def add_bot(team):
+    return Bot('127.0.0.1', team)

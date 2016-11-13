@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+
 import pygame
 from twisted.internet import reactor
 from twisted.internet.task import LoopingCall
@@ -9,12 +10,15 @@ from client.criaturas import HandlerCreatures
 from client.mapa import Mapa
 from client.mouse import MouseHandler
 from client.pantalla import Pantalla
-from client.teclado import TecladoHandler
+from client.teclado import KeyboardHandler
 
 DESIRED_FPS = 30.0  # 30 frames per second
 
 
 class Juego(object):
+
+    # set it to False in case you need to run the reactor elsewhere
+    STANDALONE = True
 
     def __init__(self, host, equipo):
         self.on = True
@@ -25,13 +29,14 @@ class Juego(object):
         self.load_io_handlers()
         self.conexion = Conexion(host, self, self.hcriat, equipo)
         # loop principal
-        tick = LoopingCall(self.update)
-        tick.start(1.0 / DESIRED_FPS)
-        reactor.run()
+        self.loop = LoopingCall(self.update)
+        self.loop.start(1.0 / DESIRED_FPS)
+        if self.STANDALONE:
+            reactor.run()
 
     def load_io_handlers(self):
         self.pantalla = Pantalla(self)
-        self.teclado = TecladoHandler(self)
+        self.teclado = KeyboardHandler(self)
         self.mouse = MouseHandler(self)
 
     def update(self):
@@ -74,6 +79,6 @@ class Juego(object):
 
 
 if __name__ == '__main__':
-    team = input('1 - blue ; 2 - red\n')
+    team = raw_input('1 - blue ; 2 - red\n') or 1
     ip = raw_input('IP: (default is 127.0.0.1)\n') or '127.0.0.1'
-    Juego(ip, team)
+    Juego(ip, int(team))

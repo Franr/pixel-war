@@ -1,5 +1,6 @@
 from twisted.internet import reactor
 
+from constants import Team
 from entidades import Jugador, Bala
 from exceptions import PlayerDoesNotExist
 
@@ -19,8 +20,6 @@ class CreaturesHandler:
     VIDA_MAX = 100
     pw_map = None
     score = None
-    BLUE = 1
-    RED = 2
 
     def __init__(self):
         self.jugadores = {}
@@ -28,7 +27,7 @@ class CreaturesHandler:
 
     def get_team_start_position(self, team):
         pw_map = self.get_map()
-        return pw_map.get_blue() if team == CreaturesHandler.BLUE else pw_map.get_red()
+        return pw_map.get_blue() if team == Team.BLUE else pw_map.get_red()
 
     def create_player(self, x, y, equipo):
         uid = self.handler_id.next()

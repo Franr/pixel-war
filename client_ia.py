@@ -7,6 +7,8 @@ from client_ui import Juego
 
 class Bot(Juego):
 
+    STANDALONE = False
+
     def load_io_handlers(self):
         pass
 
@@ -21,6 +23,12 @@ class Bot(Juego):
     def set_principal(self, jugador):
         self.principal = jugador
         self.hcriat.my_team = jugador.equipo
+
+    def get_uid(self):
+        # TODO: this is just a hack, find a better approach
+        if self.principal:
+            return self.principal.uid
+        return 1
 
     def create_map(self, sequence):
         return MapLogic(sequence)

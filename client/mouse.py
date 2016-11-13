@@ -66,4 +66,4 @@ class MouseHandler(object):
 
         direction = angulo_to_dir(self.mouse.get_angle())
         if self.enabled:
-            self.juego.conexion.cf.protocol.disparar(direction)
+            self.juego.conexion.cf.protocol.fire(direction)

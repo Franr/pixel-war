@@ -2,10 +2,10 @@ from twisted.protocols import amp
 
 from game_commands import (
     Move, MoveObject, SendMap, CreateObject, CreateObjects, Login, PlayerShoot, Shoot, PlayerHit,
-    PlayerRevive, LogoutPlayer, UpdateScore, RestartRound)
+    PlayerRevive, LogoutPlayer, UpdateScore, RestartRound, AddBot, DeleteBot)
 
 from bala import Bala
-from bloqueos import BloqueoDisp, BloqueoMov
+from bloqueos import FireBlock, MoveBlock
 
 
 class PWProtocol(amp.AMP):
@@ -17,15 +17,15 @@ class PWProtocol(amp.AMP):
         self.team = team
         self.mapa = None
         self.my_uid = None
+        self.move_blocker = MoveBlock()
+        self.fire_blocker = FireBlock()
 
     def connectionMade(self):
-        print 'team:', self.team
         self.transport.setTcpNoDelay(True)
         self.callRemote(Login, team=self.team).addCallback(self.set_main_player)
 
     def set_main_player(self, result):
         self.my_uid = result['uid']
-        print 'tu id:', self.my_uid
         principal = self.hcriat.get_creature_by_uid(self.my_uid)
         principal.es_principal = True
         self.juego.set_principal(principal)
@@ -92,10 +92,10 @@ class PWProtocol(amp.AMP):
         self.hcriat.set_score(blue, red)
         return {'ok': 1}
 
-    def disparar(self, direction):
-        if not BloqueoDisp.block:
+    def fire(self, direction):
+        if not self.fire_blocker.is_blocked():
             self.callRemote(Shoot, uid=self.my_uid, direction=direction)
-            BloqueoDisp()
+            self.fire_blocker.block()
 
     def logout(self, uid):
         # desconectar
@@ -105,9 +105,15 @@ class PWProtocol(amp.AMP):
             self.hcriat.del_creature_by_id(uid)
 
     def move(self, direction):
-        if not BloqueoMov.block:
+        if not self.move_blocker.is_blocked():
             self.callRemote(Move, uid=self.my_uid, direction=direction)
-            BloqueoMov()
+            self.move_blocker.block()
 
     def restart_round(self):
         self.callRemote(RestartRound, uid=self.my_uid)
+
+    def add_bot(self, team):
+        self.callRemote(AddBot, team=team)
+
+    def delete_bot(self, team):
+        self.callRemote(DeleteBot, team=team)

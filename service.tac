@@ -11,6 +11,8 @@ def get_service():
     port = 20000
     return internet.TCPServer(port, PWProtocolFactory())
 
+print 'starting server...'
 application = service.Application("Pixel War Server")
 service = get_service()
 service.setServiceParent(application)
+print 'server running'
