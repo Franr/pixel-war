@@ -117,7 +117,7 @@ class ActionsTest(TestCase):
         self.assertEqual(len(others), 1)
 
     def test_full_team_base(self):
-        for i in range(9):
+        for _ in range(9):
             create_player(Team.RED, self.hcriat)
         self.assertRaises(TeamBasePositionNotFound, create_player, Team.RED, self.hcriat)
 
@@ -136,15 +136,15 @@ class ActionsTest(TestCase):
 
     def test_shoot_update(self):
         player, _, _, _ = create_player(Team.BLUE, self.hcriat)
-        player, shoot_handler = shoot_action(player.get_uid(), 'n', self.hcriat, None, None)
+        _, shoot_handler = shoot_action(player.get_uid(), 'n', self.hcriat, None, None)
         before_y = shoot_handler.bala.y
         shoot_handler.loop()
         self.assertEqual(before_y - 1, shoot_handler.bala.y)
 
     def test_shoot_hit_wall(self):
         player, _, _, _ = create_player(Team.BLUE, self.hcriat)
-        player, shoot_handler = shoot_action(player.get_uid(), 'o', self.hcriat, None, None)
-        for i in range(3):
+        _, shoot_handler = shoot_action(player.get_uid(), 'o', self.hcriat, None, None)
+        for _ in range(3):
             self.assertTrue(shoot_handler.update())
         self.assertFalse(shoot_handler.update())
 
@@ -152,19 +152,19 @@ class ActionsTest(TestCase):
         player1, _, _, pw_map = create_player(Team.BLUE, self.hcriat)
         player2, _, _, pw_map = create_player(Team.BLUE, self.hcriat)
         pw_map.move_player(player2, player1.x+2, player1.y)
-        player, shoot_handler = shoot_action(player1.get_uid(), 'e', self.hcriat, None, None)
-        for i in range(3):
+        _, shoot_handler = shoot_action(player1.get_uid(), 'e', self.hcriat, None, None)
+        for _ in range(3):
             self.assertTrue(shoot_handler.update())
 
     def test_shoot_enemy(self):
         player1, _, _, pw_map = create_player(Team.BLUE, self.hcriat)
         player2, _, _, pw_map = create_player(Team.RED, self.hcriat)
         pw_map.move_player(player2, player1.x+2, player1.y)
-        player, shoot_handler = shoot_action(player1.get_uid(), 'e', self.hcriat, callback, None)
-        healt_before = player2.vida
+        _, shoot_handler = shoot_action(player1.get_uid(), 'e', self.hcriat, callback, None)
+        health_before = player2.vida
         self.assertTrue(shoot_handler.update())  # move 1 sqm
         self.assertFalse(shoot_handler.update())  # hit the enemy
-        self.assertLess(player2.vida, healt_before)
+        self.assertLess(player2.vida, health_before)
 
     def test_cant_shoot_exception(self):
         player1, _, _, _ = create_player(Team.BLUE, self.hcriat)
@@ -176,7 +176,7 @@ class ActionsTest(TestCase):
         player1, _, _, pw_map = create_player(Team.BLUE, self.hcriat)
         player2, _, _, pw_map = create_player(Team.RED, self.hcriat)
         pw_map.move_player(player2, player1.x+1, player1.y)
-        player, shoot_handler = shoot_action(
+        _, shoot_handler = shoot_action(
             player1.get_uid(), 'e', self.hcriat, callback, callback)
         player2.vida = 1
         shoot_handler.loop()
@@ -193,7 +193,7 @@ class ActionsTest(TestCase):
             return increase_score(uid, self.hcriat)
 
         pw_map.move_player(player2, player1.x+1, player1.y)
-        player, shoot_handler = shoot_action(
+        _, shoot_handler = shoot_action(
             player1.get_uid(), 'e', self.hcriat, callback, die_callback)
         player2.vida = 1
         self.assertEqual(self.score.blue_score, 0)
@@ -208,7 +208,7 @@ class ActionsTest(TestCase):
             return increase_score(uid, self.hcriat)
 
         pw_map.move_player(player2, player1.x+1, player1.y)
-        player, shoot_handler = shoot_action(
+        _, shoot_handler = shoot_action(
             player1.get_uid(), 'e', self.hcriat, callback, die_callback)
         player2.vida = 1
         self.assertEqual(self.score.red_score, 0)
