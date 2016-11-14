@@ -21,7 +21,7 @@ class Bot(GenericClient):
         pass
 
     def update(self):
-        avoid_shoot(self.principal, self.balas.balas, self.conexion)
+        avoid_shoot(self.principal, self.balas.bullets, self.conexion)
         shoot_enemy(self.principal, self.hcriat.get_enemies(), self.conexion)
         move(self.principal, self.conexion)
 
