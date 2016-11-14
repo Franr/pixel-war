@@ -33,18 +33,18 @@ def shoot_enemy(bot, enemies, connection):
             connection.cf.protocol.fire(direction)
 
 
-def move(bot, connection):
+def move(_, connection):
     if connection.cf.protocol:
         connection.cf.protocol.move(random.choice(pos_letter.values()))
 
 
-def get_all_empty_place(mapa, x, y):
+def get_all_empty_place(map_obj, x, y):
     positions = (0, -1), (-1,  0), (1,  0), (0,  1)
     empties = []
     for pos in positions:
         nx = x + pos[0]
         ny = y + pos[1]
-        if not mapa.is_blocking_position(nx, ny):
+        if not map_obj.is_blocking_position(nx, ny):
             empties.append(pos)
     return empties
 

@@ -42,7 +42,8 @@ class HandlerCreatures(object):
             print("Id invalida:" + str(uid))
 
     def reset_all(self):
-        [j.reset() for j in self.jugadores.values()]
+        for j in self.jugadores.values():
+            j.reset()
 
     def set_score(self, azul, rojo):
         self.azul = azul
@@ -77,9 +78,6 @@ class Creature(Positionable):
         self.vivo = True
         self.vida.llenar()
 
-    def es_principal(self):
-        return False
-
     def esta_vivo(self):
         return self.vivo
 
@@ -98,9 +96,6 @@ class Player(Creature):
     def __init__(self, uid, x, y, vida, vida_max, team):
         super(Player, self).__init__(uid, x, y, vida, vida_max, team)
         self.es_principal = False
-
-    def es_principal(self):
-        return self.es_principal
 
 
 class Vida(object):

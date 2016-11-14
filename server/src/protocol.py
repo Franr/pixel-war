@@ -78,7 +78,7 @@ class PWProtocol(amp.AMP):
     @Shoot.responder
     def player_shoot(self, uid, direction):
         try:
-            jug, shoot_handler = shoot_action(uid, direction, self.hcriat, self.hit, self.die)
+            jug, _ = shoot_action(uid, direction, self.hcriat, self.hit, self.die)
         except exceptions.CantShoot:
             pass
         else:

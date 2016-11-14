@@ -45,7 +45,7 @@ class GenericClient(object):
         return self.hcriat.get_players()
 
     def get_bullets(self):
-        return self.balas.get_balas()
+        return self.balas.bullets
 
     def get_score(self):
         return self.hcriat.azul, self.hcriat.rojo

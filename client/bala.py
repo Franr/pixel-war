@@ -18,33 +18,30 @@ class HandlerBalas(object):
 
     """ Clase que almacena las balas que dibuja el cliente """
 
-    def __init__(self, juego):
-        self.juego = juego
-        self.balas = []
+    def __init__(self, game):
+        self.game = game
+        self.bullets = []
         self.clean_loop()
 
-    def get_balas(self):
-        return self.balas
-
-    def add_bullet(self, bala):
-        self.balas.append(bala)
+    def add_bullet(self, bullet):
+        self.bullets.append(bullet)
 
     def clean_loop(self):
-        [self.balas.remove(b) for b in self.balas if not b.alive]
-        if self.juego.on:
+        self.bullets = [b for b in self.bullets if b.alive]
+        if self.game.on:
             reactor.callLater(0.1, self.clean_loop)
 
 
-class Bala(Positionable):
+class Bullet(Positionable):
 
-    def __init__(self, uid, x, y, direction, equipo, juego):
+    def __init__(self, uid, x, y, direction, equipo, game):
         Positionable.__init__(self, x, y)
         self.uid = uid
         self.dir = direction
         self.equipo = equipo
-        self.juego = juego
+        self.game = game
         self.alive = True
-        self.mapa = juego.conexion.cf.protocol.mapa  # horrible
+        self.mapa = game.conexion.cf.protocol.mapa  # horrible
         self.delay = 0.05
         # go for it!
         self.loop()
@@ -54,7 +51,7 @@ class Bala(Positionable):
         self.x += mx
         self.y += my
         self.collision()
-        if self.juego.on and not self.collision():
+        if self.game.on and not self.collision():
             reactor.callLater(self.delay, self.loop)
         else:
             self.alive = False

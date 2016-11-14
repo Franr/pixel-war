@@ -15,7 +15,7 @@ def id_generator():
         num += 1
 
 
-class CreaturesHandler:
+class CreaturesHandler(object):
 
     VIDA_MAX = 100
     pw_map = None

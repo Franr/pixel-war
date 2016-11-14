@@ -4,7 +4,7 @@ from game_commands import (
     Move, MoveObject, SendMap, CreateObject, CreateObjects, Login, PlayerShoot, Shoot, PlayerHit,
     PlayerRevive, LogoutPlayer, UpdateScore, RestartRound, AddBot, DeleteBot)
 
-from bala import Bala
+from bala import Bullet
 from bloqueos import FireBlock, MoveBlock
 
 
@@ -65,7 +65,7 @@ class PWProtocol(amp.AMP):
         # disparo
         jug = self.hcriat.get_creature_by_uid(uid)
         if jug:
-            self.juego.add_bullet(Bala(uid, x, y, direction, jug.get_equipo(), self.juego))
+            self.juego.add_bullet(Bullet(uid, x, y, direction, jug.get_equipo(), self.juego))
         return {'ok': 1}
 
     @PlayerHit.responder
