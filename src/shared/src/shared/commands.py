@@ -62,6 +62,11 @@ class PlayerLogout(Command):
     uid: int
     action: str = "player_logout"
 
+@dataclass
+class ServerError(Command):
+    description: str
+    action: str = "server_error"
+
 ####################
 # Client to server # 
 ####################

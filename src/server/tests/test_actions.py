@@ -1,7 +1,5 @@
-import asyncio
-from os import path
 from unittest import TestCase
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
 
 from shared.constants import Direction, Team
 
@@ -21,7 +19,7 @@ from src.exceptions import (
     InvalidMovementDirection,
     InvalidShootDirection,
     PlayerDoesNotExist,
-    TeamBasePositionNotFound,
+    RespawnFull,
 )
 from src.handlers import CreaturesHandler
 from src.mapa import Mapa
@@ -41,19 +39,6 @@ class ActionsTest(TestCase):
         self.ch.jugadores = {}
         self.ch.pw_map = self.pw_map
         self.ch.score = self.score
-
-    # def tearDown(self):
-    # """Cancel all the pending calls to avoid problems"""
-    # pending = reactor.getDelayedCalls()
-    # for p in pending:
-    # if p.active():
-    # p.cancel()
-
-    # def test_main(self):
-    # server = Server()
-    # self.assertTrue(isinstance(server.pw_map, Mapa))
-    # self.assertTrue(isinstance(server.score, Score))
-    # self.assertTrue(isinstance(server.ch, CreaturesHandler))
 
     def test_login_blue(self):
         player, _, _, _ = create_player(Team.BLUE, self.ch)
@@ -128,7 +113,7 @@ class ActionsTest(TestCase):
     def test_full_team_base(self):
         for _ in range(9):
             create_player(Team.RED, self.ch)
-        self.assertRaises(TeamBasePositionNotFound, create_player, Team.RED, self.ch)
+        self.assertRaises(RespawnFull, create_player, Team.RED, self.ch)
 
     @patch.object(Jugador, "SHOOT_COOLDOWN", 0) # no move locks
     def test_shoot_directions(self):

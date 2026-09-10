@@ -26,5 +26,5 @@ class CantMove(Exception):
     pass
 
 
-class TeamBasePositionNotFound(Exception):
-    pass
+class RespawnFull(Exception):
+    details = "No available space to respawn. Try again later."

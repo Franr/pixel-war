@@ -12,6 +12,7 @@ from shared.commands import (
     PlayerRevive,
     PlayerShoot,
     SendMap,
+    ServerError,
     UpdateScore,
 )
 from shared.protocol import MessageProtocol
@@ -23,7 +24,7 @@ from .actions import (
     revive_player,
     shoot_action,
 )
-from .exceptions import BlockedPosition, CantMove, CantShoot
+from .exceptions import BlockedPosition, CantMove, CantShoot, RespawnFull
 from .handlers import BulletHandler, CreaturesHandler
 from .logger import logger
 from .mapa import Mapa
@@ -71,7 +72,6 @@ class ServerHandler:
 
         # Close all active client connections cleanly
         for client in self.clients.values():
-            # client].transport:
             client.transport.close()
         self.clients.clear()
 
@@ -109,7 +109,7 @@ class ServerHandler:
 
 class GameHandler:
 
-    def __init__(self, server: ServerHandler|None = None):
+    def __init__(self, server: ServerHandler):
         self.pw_map = Mapa("mapa")
         self.score = Score()
         self.ch = CreaturesHandler()
@@ -123,25 +123,30 @@ class GameHandler:
         return getattr(self, command)(client, **dict(payload, **extra))
 
     def broadcast(self, cmd: Command):
-        if self.server:
-            self.server.broadcast(cmd)
+        self.server.broadcast(cmd)
 
     def login(self, client, team: int, correlation_id: str) -> dict[str, int]:
-        # create player
-        player, other_players, score, pw_map = create_player(team, self.ch)
-        # map
-        client.send_message(SendMap(sec_map=pw_map.array_map))
-        # create new player on all the clients
-        self.broadcast(CreateObject(obj_data=player.get_data(), correlation_id=correlation_id))
-        # create all the players on the new client
-        client.send_message(CreateObjects(objs_data=[p.get_data() for p in other_players]))
-        # update the score
-        client.send_message(UpdateScore(blue=score[0], red=score[1]))
+        player_uid = -1  # replaced if the player creation is successful
+        try:
+            # create player
+            player, other_players, score, pw_map = create_player(team, self.ch)
+            player_uid = player.uid
+        except RespawnFull:
+            client.send_message(ServerError(description=RespawnFull.details))
+        else:
+            # map
+            client.send_message(SendMap(sec_map=pw_map.array_map))
+            # create new player on all the clients
+            self.broadcast(CreateObject(obj_data=player.get_data(), correlation_id=correlation_id))
+            # create all the players on the new client
+            client.send_message(CreateObjects(objs_data=[p.get_data() for p in other_players]))
+            # update the score
+            client.send_message(UpdateScore(blue=score[0], red=score[1]))
 
         # associate ip/port with uid, for the logout case
-        self.peers[client.address] = player.uid
+        self.peers[client.address] = player_uid
         
-        return {'uid': player.uid}
+        return {'uid': player_uid}
 
     def move(self, client, uid: int, direction: str):
         try:
@@ -163,13 +168,15 @@ class GameHandler:
 
         return True
 
-    def _hit_callback(self, uid: int, damage: int):
+    def _hit_callback(self, uid: int, damage: int) -> bool:
         """
         Callback when a player get hitted: substract life.
         """
         self.broadcast(PlayerHit(uid=uid, dmg=damage))
 
-    def _die_callback(self, uid: int):
+        return True
+
+    def _die_callback(self, uid: int) -> bool:
         """
         Callback when a player die: revive it and update score.
         """
@@ -177,6 +184,8 @@ class GameHandler:
         revive_player(uid, self.ch)
         self.broadcast(PlayerRevive(uid=uid))
         self.broadcast(UpdateScore(blue=score[0], red=score[1]))
+
+        return True
 
 
 class Server(MessageProtocol):
@@ -206,8 +215,9 @@ class Server(MessageProtocol):
             return
 
         self.clients.pop(self.address)
-        logger.info(f"[SERVER] Client disconnected: {self.address}")
-        self.gh.broadcast(PlayerLogout(uid=self.gh.peers[self.address]))
+        uid = self.gh.peers.pop(self.address)
+        self.gh.broadcast(PlayerLogout(uid=uid))
+        logger.info(f"[SERVER] Client disconnected: {self.address} - Player ID: {uid}")
 
     def message_received(self, message: dict):
         action = message.pop("action")

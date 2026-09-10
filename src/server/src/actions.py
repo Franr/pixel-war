@@ -39,13 +39,13 @@ def move_player(uid: int, direction: str, ch: CreaturesHandler):
 
     x, y = jug.get_coor()
     # next position
-    if direction == 'n':
+    if direction == Direction.NORTH:
         y -= 1
-    elif direction == 'e':
+    elif direction == Direction.EAST:
         x += 1
-    elif direction == 's':
+    elif direction == Direction.SOUTH:
         y += 1
-    elif direction == 'o':
+    elif direction == Direction.WEST:
         x -= 1
 
     return teleport_player(uid, x, y, ch)

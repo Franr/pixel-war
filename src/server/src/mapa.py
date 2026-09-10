@@ -1,7 +1,10 @@
 import os
 
+from shared.constants import Team
+
 from .entidades import Jugador
-from .exceptions import InvalidTeam, TeamBasePositionNotFound
+from .exceptions import InvalidTeam, RespawnFull
+from .logger import logger
 from .utils import Archivo
 
 
@@ -91,9 +94,9 @@ class Mapa:
 
     def base_position(self, jugador: Jugador) -> Jugador:
         pos = None
-        if jugador.get_team() == 1:  # TODO: check team reference
+        if jugador.get_team() == Team.BLUE:
             pos = self.get_blue()
-        elif jugador.get_team() == 2:
+        elif jugador.get_team() == Team.RED:
             pos = self.get_red()
         else:
             raise InvalidTeam
@@ -114,6 +117,7 @@ class Mapa:
         return self.array_map[y][x] >= 1
 
     def get_empty_place(self, x: int, y: int) -> tuple[int, int]:
+        # TODO: relax the quadrant restriction and expand the range
         cuadrante = [[-1, -1], [0, -1], [1, -1],
                      [-1,  0],          [1,  0],
                      [-1,  1], [0,  1], [1,  1]]
@@ -123,7 +127,9 @@ class Mapa:
             ny = y + pos[1]
             if not self.pos_is_blocked(nx, ny):
                 return nx, ny
-        raise TeamBasePositionNotFound
+
+        logger.warning(f"No empty position found for coordinates x:{x} y:{y}")
+        raise RespawnFull
 
     def move_player(self, jugador, x, y):
         antx, anty = jugador.get_coor()

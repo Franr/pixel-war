@@ -23,10 +23,6 @@ class TemporalContextLock:
             yield True
 
     def is_locked(self):
-        print(
-            time.monotonic(), self.last_executed, self.cooldown,
-            time.monotonic() - self.last_executed < self.cooldown
-        )
         return time.monotonic() - self.last_executed < self.cooldown
 
 class BaseObjet:
@@ -98,8 +94,8 @@ class Jugador(Criatura):
             Criatura.mover(self, x, y)
 
     def block_shot(self):
-        # just lock, bullet movement is handled by its own class
         with self._shoot_lock.guard():
+            # just lock, bullet movement is handled by its own handler
             pass
 
     def cant_move(self):
