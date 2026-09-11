@@ -4,7 +4,7 @@ from collections.abc import Callable, Generator
 from shared.constants import Team
 
 from .entidades import Bala, Jugador
-from .exceptions import PlayerDoesNotExist
+from .exceptions import InvalidTeam, PlayerDoesNotExist
 from .logger import logger
 from .mapa import Mapa
 from .score import Score
@@ -32,7 +32,12 @@ class CreaturesHandler:
 
     def get_team_start_position(self, team: int) -> tuple[int, int]:
         pw_map = self.get_map()
-        return pw_map.get_blue() if team == Team.BLUE else pw_map.get_red()
+        if team == Team.BLUE:
+           return pw_map.get_blue()
+        elif team == Team.RED:
+            return pw_map.get_red()
+
+        raise InvalidTeam
 
     def create_player(self, x, y, equipo):
         uid = next(self.handler_id)
@@ -101,7 +106,7 @@ class BulletHandler:
         # hit nothing or its owner
         if mid in (0, self.bala.get_uid()):
             self.bala.mover()
-            logger.debug(f"[Bullet] Player: {self.jug.uid} - Moved to: {self.bala.direction}")
+            logger.debug(f"[Bullet] Player: {self.jug.uid} - Moved to: {self.bala.direction} - Spot: [{x} {y} / {mid}]")
             return True
 
         # hit a block

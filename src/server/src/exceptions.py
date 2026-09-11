@@ -11,7 +11,7 @@ class InvalidShootDirection(Exception):
 
 
 class InvalidTeam(Exception):
-    pass
+    details = "Team value provided is invalid."
 
 
 class BlockedPosition(Exception):

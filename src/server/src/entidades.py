@@ -2,6 +2,8 @@ import time
 from contextlib import contextmanager
 from typing import final
 
+from shared.constants import Direction
+
 
 @final
 class TemporalContextLock:
@@ -125,13 +127,13 @@ class Bala(BaseObjet):
         return self.equipo == equipo
 
     def calc_desplazamiento(self, direction: str):
-        if direction == 'n':
+        if direction == Direction.NORTH:
             self.dy = -1
-        elif direction == 's':
+        elif direction == Direction.SOUTH:
             self.dy = 1
-        elif direction == 'e':
+        elif direction == Direction.EAST:
             self.dx = 1
-        elif direction == 'o':
+        elif direction == Direction.WEST:
             self.dx = -1
 
     def mover(self):

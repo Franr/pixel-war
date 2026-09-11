@@ -89,6 +89,7 @@ class Shoot(Command):
     direction: str
     action: str = "shoot"
 
-# class RestartRound(Command):
-#     arguments = [('uid', Integer())]
-#     response = [('ok', Integer())]
+@dataclass
+class RestartRound(Command):
+    uid: int
+    action: str = "restart_round"

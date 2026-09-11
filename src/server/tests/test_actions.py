@@ -96,7 +96,7 @@ class ActionsTest(TestCase):
         for d in (Direction.WEST, Direction.WEST, Direction.WEST):
             move_player(player.get_uid(), d, self.ch)
         # then try to walk over the wall -> not possible
-        self.assertRaises(BlockedPosition, move_player, player.get_uid(), "o", self.ch)
+        self.assertRaises(BlockedPosition, move_player, player.get_uid(), Direction.WEST, self.ch)
 
     def test_multiple_players_blue(self):
         _, others, _, _ = create_player(Team.BLUE, self.ch)
@@ -138,14 +138,14 @@ class ActionsTest(TestCase):
 
     def test_shoot_update(self):
         player, _, _, _ = create_player(Team.BLUE, self.ch)
-        shoot_handler = shoot_action(player.get_uid(), "n", self.ch, callback, callback)
+        shoot_handler = shoot_action(player.get_uid(), Direction.NORTH, self.ch, callback, callback)
         before_y = shoot_handler.bala.y
         shoot_handler.loop()
         self.assertEqual(before_y - 1, shoot_handler.bala.y)
 
     def test_shoot_hit_wall(self):
         player, _, _, _ = create_player(Team.BLUE, self.ch)
-        shoot_handler = shoot_action(player.get_uid(), "o", self.ch, callback, callback)
+        shoot_handler = shoot_action(player.get_uid(), Direction.WEST, self.ch, callback, callback)
         for _ in range(3):
             self.assertTrue(shoot_handler.update())
         self.assertFalse(shoot_handler.update())
@@ -154,7 +154,7 @@ class ActionsTest(TestCase):
         player1, _, _, pw_map = create_player(Team.BLUE, self.ch)
         player2, _, _, pw_map = create_player(Team.BLUE, self.ch)
         pw_map.move_player(player2, player1.x + 2, player1.y)
-        shoot_handler = shoot_action(player1.get_uid(), "e", self.ch, callback, callback)
+        shoot_handler = shoot_action(player1.get_uid(), Direction.EAST, self.ch, callback, callback)
         for _ in range(3):
             self.assertTrue(shoot_handler.update())
 
@@ -162,7 +162,7 @@ class ActionsTest(TestCase):
         player1, _, _, pw_map = create_player(Team.BLUE, self.ch)
         player2, _, _, pw_map = create_player(Team.RED, self.ch)
         pw_map.move_player(player2, player1.x + 2, player1.y)
-        shoot_handler = shoot_action(player1.get_uid(), "e", self.ch, callback, callback)
+        shoot_handler = shoot_action(player1.get_uid(), Direction.EAST, self.ch, callback, callback)
         health_before = player2.vida
         self.assertTrue(shoot_handler.update())  # move 1 sqm
         self.assertFalse(shoot_handler.update())  # hit the enemy
@@ -172,7 +172,7 @@ class ActionsTest(TestCase):
         player1, _, _, _ = create_player(Team.BLUE, self.ch)
         player1.vivo = False
         self.assertRaises(
-            CantShoot, shoot_action, player1.get_uid(), "e", self.ch, callback, callback
+            CantShoot, shoot_action, player1.get_uid(), Direction.EAST, self.ch, callback, callback
         )
 
     def test_kill_and_revive_enemy(self):
@@ -180,7 +180,7 @@ class ActionsTest(TestCase):
         player2, _, _, pw_map = create_player(Team.RED, self.ch)
         pw_map.move_player(player2, player1.x + 1, player1.y)
         shoot_handler = shoot_action(
-            player1.get_uid(), "e", self.ch, callback, callback
+            player1.get_uid(), Direction.EAST, self.ch, callback, callback
         )
         player2.vida = 1
         shoot_handler.loop()
@@ -198,7 +198,7 @@ class ActionsTest(TestCase):
 
         pw_map.move_player(player2, player1.x + 1, player1.y)
         shoot_handler = shoot_action(
-            player1.get_uid(), "e", self.ch, callback, die_callback
+            player1.get_uid(), Direction.EAST, self.ch, callback, die_callback
         )
         player2.vida = 1
         self.assertEqual(self.score.blue_score, 0)
@@ -214,7 +214,7 @@ class ActionsTest(TestCase):
 
         pw_map.move_player(player2, player1.x + 1, player1.y)
         shoot_handler = shoot_action(
-            player1.get_uid(), "e", self.ch, callback, die_callback
+            player1.get_uid(), Direction.EAST, self.ch, callback, die_callback
         )
         player2.vida = 1
         self.assertEqual(self.score.red_score, 0)

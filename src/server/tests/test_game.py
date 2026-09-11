@@ -1,7 +1,16 @@
 from unittest.case import TestCase
 from unittest.mock import MagicMock, patch
 
-from shared.commands import CreateObject, CreateObjects, MoveObject, PlayerHit, PlayerRevive, PlayerShoot, SendMap, UpdateScore
+from shared.commands import (
+    CreateObject,
+    CreateObjects,
+    MoveObject,
+    PlayerHit,
+    PlayerRevive,
+    PlayerShoot,
+    SendMap,
+    UpdateScore,
+)
 from shared.constants import Direction, Team
 
 from src.actions import create_player
@@ -34,7 +43,7 @@ class GameHandlerTest(TestCase):
 
     def test_receive_move(self):
         # moving a player who doesn't exists
-        self.assertRaises(PlayerDoesNotExist, self.gh.move, self.client, self.DUMMY_PLAYER_ID, Direction.NORTH)
+        self.assertFalse(self.gh.move(self.client, self.DUMMY_PLAYER_ID, Direction.NORTH))
 
         player, _, _, _ = create_player(Team.BLUE, self.gh.ch)
         
@@ -49,7 +58,7 @@ class GameHandlerTest(TestCase):
 
     def test_receive_player_shoot(self):
         # shoots from a player who doesn't exists
-        self.assertRaises(PlayerDoesNotExist, self.gh.shoot, self.client, self.DUMMY_PLAYER_ID, Direction.NORTH)
+        self.assertFalse(self.gh.shoot(self.client, self.DUMMY_PLAYER_ID, Direction.NORTH))
 
         player, _, _, _ = create_player(Team.BLUE, self.gh.ch)
 

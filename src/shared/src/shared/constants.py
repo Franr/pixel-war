@@ -1,21 +1,23 @@
 class Team:
     BLUE = 1
     RED = 2
-    LIST = (BLUE, RED)
+
+    @classmethod
+    def validate(cls, team_id: int):
+        return team_id in (cls.BLUE, cls.RED)
 
 
 class Direction:
-    # TODO: replace "o" with "w"
     # 2 axis
     NORTH = "n"
     SOUTH = "s"
-    WEST = "o"
+    WEST = "w"
     EAST = "e"
 
     # 4 axis
-    NORTH_WEST = "no"
+    NORTH_WEST = "nw"
     NORTH_EAST = "ne"
-    SOUTH_WEST = "so"
+    SOUTH_WEST = "sw"
     SOUTH_EAST = "se"
 
     @classmethod

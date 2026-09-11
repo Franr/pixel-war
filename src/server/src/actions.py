@@ -9,14 +9,13 @@ from .exceptions import (
     CantShoot,
     InvalidMovementDirection,
     InvalidShootDirection,
-    PlayerDoesNotExist,
 )
 from .handlers import BulletHandler, CreaturesHandler
 from .logger import logger
 from .mapa import Mapa
 
 
-def create_player(team, ch: CreaturesHandler) -> tuple[Jugador, list[Jugador], tuple[int, int], Mapa]:
+def create_player(team: int, ch: CreaturesHandler) -> tuple[Jugador, list[Jugador], tuple[int, int], Mapa]:
     # you
     x, y = ch.get_team_start_position(team)
     player: Jugador = ch.create_player(x, y, team)
@@ -54,7 +53,6 @@ def move_player(uid: int, direction: str, ch: CreaturesHandler):
 def teleport_player(uid: int, x: int, y:int , ch: CreaturesHandler):
     jug = ch.get_creature_by_uid(uid)
     pw_map = ch.get_map()
-    print(x, y, pw_map.pos_is_blocked(x, y))
     if pw_map.pos_is_blocked(x, y):
         raise BlockedPosition
     pw_map.move_player(jug, x, y)
@@ -74,12 +72,12 @@ def shoot_action(uid: int, direction: str, ch: CreaturesHandler, hit_callback: C
         raise CantShoot
 
 
-def revive_player(uid, ch: CreaturesHandler):
+def revive_player(uid: int, ch: CreaturesHandler):
     jug = ch.get_creature_by_uid(uid)
     jug.revive()
 
 
-def increase_score(uid, ch: CreaturesHandler):
+def increase_score(uid: int, ch: CreaturesHandler):
     jug = ch.get_creature_by_uid(uid)
     if jug.team == Team.BLUE:
         ch.score.murio_azul()
@@ -88,16 +86,10 @@ def increase_score(uid, ch: CreaturesHandler):
     return ch.score.get_data()
 
 
-def restart_round(uid, ch: CreaturesHandler):
-    try:
-        ch.get_creature_by_uid(uid)
-    except PlayerDoesNotExist:
-        return
+def restart_round(uid: int, ch: CreaturesHandler):
+    ch.get_creature_by_uid(uid)
     ch.score.restart()
     new_players = ch.restart_players()
     new_score = ch.get_score()
+
     return new_players, new_score
-
-
-# def add_bot(team):
-    # return Bot('127.0.0.1', team)
