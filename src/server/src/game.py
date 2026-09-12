@@ -175,7 +175,7 @@ class GameHandler:
         # TODO: restrict with any criteria (admin/first player/etc...)
         try:
             players, new_score = restart_round(uid, self.ch)
-        except (BlockedPosition, CantMove, PlayerDoesNotExist):
+        except PlayerDoesNotExist:
             return False
         else:
             self.broadcast(UpdateScore(blue=new_score[0], red=new_score[1]))

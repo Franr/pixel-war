@@ -7,6 +7,7 @@ from src.actions import (
     create_player,
     increase_score,
     move_player,
+    restart_round,
     revive_player,
     shoot_action,
     teleport_player,
@@ -221,35 +222,37 @@ class ActionsTest(TestCase):
         shoot_handler.loop()
         self.assertEqual(self.score.red_score, 1)
 
-    # def test_restart_round(self):
+    def test_restart_round(self):
         # wrong player trying to restart
-        # self.assertIsNone(restart_round(153, self.ch))
+        self.assertRaises(PlayerDoesNotExist, restart_round, -1, self.ch)
 
         # real case
-        # player1, _, _, pw_map = create_player(Team.BLUE, self.ch)
-        # player2, _, _, pw_map = create_player(Team.RED, self.ch)
-        # move both once place
-        # teleport_player(player1.uid, player1.x + 1, player1.y + 1, self.ch)
-        # teleport_player(player2.uid, player2.x + 1, player2.y + 1, self.ch)
+        player1, _, _, pw_map = create_player(Team.BLUE, self.ch)
+        player2, _, _, pw_map = create_player(Team.RED, self.ch)
+        # move both one place
+        teleport_player(player1.uid, player1.x + 1, player1.y + 1, self.ch)
+        teleport_player(player2.uid, player2.x + 1, player2.y + 1, self.ch)
         # change life
-        # player1.vida = 1
-        # player2.vida = 1
+        player1.vida = 1
+        player2.vida = 1
         # change score
-        # self.score.murio_azul()
-        # self.score.murio_rojo()
+        self.score.murio_azul()
+        self.score.murio_rojo()
         # restart
-        # players, new_score = restart_round(player1.uid, self.ch)
+        players, new_score = restart_round(player1.uid, self.ch)
+        
         # base positions
-        # new_blue = players.pop(0) if players[0].team == Team.BLUE else players.pop()
-        # new_red = players.pop()
+        players = list(players)
+        player_blue = players.pop(0) if players[0].team == Team.BLUE else players.pop()
+        player_red = players.pop()
         # blue
-        # self.assertEqual(new_blue.x, pw_map.x_azul)
-        # self.assertEqual(new_blue.y, pw_map.y_azul)
-        # self.assertEqual(new_blue.vida, self.ch.VIDA_MAX)
+        self.assertEqual(player_blue.x, pw_map.x_azul)
+        self.assertEqual(player_blue.y, pw_map.y_azul)
+        self.assertEqual(player_blue.vida, self.ch.VIDA_MAX)
         # red
-        # self.assertEqual(new_red.x, pw_map.x_rojo)
-        # self.assertEqual(new_red.y, pw_map.y_rojo)
-        # self.assertEqual(new_red.vida, self.ch.VIDA_MAX)
+        self.assertEqual(player_red.x, pw_map.x_rojo)
+        self.assertEqual(player_red.y, pw_map.y_rojo)
+        self.assertEqual(player_red.vida, self.ch.VIDA_MAX)
         # score
-        # self.assertEqual(new_score[0], 0)
-        # self.assertEqual(new_score[1], 0)
+        self.assertEqual(new_score[0], 0)
+        self.assertEqual(new_score[1], 0)

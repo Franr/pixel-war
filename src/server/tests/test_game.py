@@ -81,8 +81,15 @@ class GameHandlerTest(TestCase):
         self.assertIsInstance(self.server.broadcast.call_args_list[0][0][0], PlayerRevive)
         self.assertIsInstance(self.server.broadcast.call_args_list[1][0][0], UpdateScore)
 
-    # def test_restart_round(self):
-        # self.assertEqual(self.pwp.restart_round(self.player.uid), OK_RESPONSE)
+    def test_restart_round_unexistent_player(self):
+        self.assertFalse(self.gh.restart_round(self.client, self.DUMMY_PLAYER_ID))
+
+    def test_restart_round(self):
+        player, _, _, _ = create_player(Team.BLUE, self.gh.ch)
+        self.assertTrue(self.gh.restart_round(self.client, player.uid))
+        self.assertIsInstance(self.server.broadcast.call_args_list[0][0][0], UpdateScore)
+        self.assertIsInstance(self.server.broadcast.call_args_list[1][0][0], MoveObject)
+        self.assertIsInstance(self.server.broadcast.call_args_list[2][0][0], PlayerRevive)
 
     # def test_connection_lost(self):
         # self.assertEqual(self.pwp.login(1), {'uid': 3})
