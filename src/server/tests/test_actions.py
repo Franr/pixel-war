@@ -223,12 +223,9 @@ class ActionsTest(TestCase):
         self.assertEqual(self.score.red_score, 1)
 
     def test_restart_round(self):
-        # wrong player trying to restart
-        self.assertRaises(PlayerDoesNotExist, restart_round, -1, self.ch)
-
-        # real case
         player1, _, _, pw_map = create_player(Team.BLUE, self.ch)
         player2, _, _, pw_map = create_player(Team.RED, self.ch)
+
         # move both one place
         teleport_player(player1.uid, player1.x + 1, player1.y + 1, self.ch)
         teleport_player(player2.uid, player2.x + 1, player2.y + 1, self.ch)
@@ -239,8 +236,8 @@ class ActionsTest(TestCase):
         self.score.murio_azul()
         self.score.murio_rojo()
         # restart
-        players, new_score = restart_round(player1.uid, self.ch)
-        
+        players, new_score = restart_round(self.ch)
+
         # base positions
         players = list(players)
         player_blue = players.pop(0) if players[0].team == Team.BLUE else players.pop()

@@ -109,13 +109,12 @@ class GameHandler:
 
         return True
 
-    def restart_round(self, client: "Connection", uid: int) -> bool:
+    def restart_round(self) -> bool:
         """
         Player requested to restart the round.
         """
-        # TODO: restrict with any criteria (admin/first player/etc...)
         try:
-            players, new_score = restart_round(uid, self.ch)
+            players, new_score = restart_round(self.ch)
         except PlayerDoesNotExist:
             return False
         else:
