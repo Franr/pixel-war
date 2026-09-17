@@ -39,7 +39,7 @@ class GameHandlerTest(TestCase):
         self.assertIsInstance(self.client.send_message.call_args_list[2][0][0], UpdateScore)
 
         # player registered
-        self.assertIn(new_player_uid['uid'], self.gh.peers.values())
+        self.assertIn(new_player_uid, self.gh.peers.values())
 
     def test_receive_move(self):
         # moving a player who doesn't exists
@@ -81,12 +81,9 @@ class GameHandlerTest(TestCase):
         self.assertIsInstance(self.server.broadcast.call_args_list[0][0][0], PlayerRevive)
         self.assertIsInstance(self.server.broadcast.call_args_list[1][0][0], UpdateScore)
 
-    def test_restart_round_unexistent_player(self):
-        self.assertFalse(self.gh.restart_round(self.client, self.DUMMY_PLAYER_ID))
-
     def test_restart_round(self):
-        player, _, _, _ = create_player(Team.BLUE, self.gh.ch)
-        self.assertTrue(self.gh.restart_round(self.client, player.uid))
+        _, _, _, _ = create_player(Team.BLUE, self.gh.ch)
+        self.assertTrue(self.gh.restart_round())
         self.assertIsInstance(self.server.broadcast.call_args_list[0][0][0], UpdateScore)
         self.assertIsInstance(self.server.broadcast.call_args_list[1][0][0], MoveObject)
         self.assertIsInstance(self.server.broadcast.call_args_list[2][0][0], PlayerRevive)

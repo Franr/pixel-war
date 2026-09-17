@@ -86,8 +86,7 @@ def increase_score(uid: int, ch: CreaturesHandler):
     return ch.score.get_data()
 
 
-def restart_round(uid: int, ch: CreaturesHandler):
-    ch.get_creature_by_uid(uid)
+def restart_round(ch: CreaturesHandler):
     ch.score.restart()
     new_players = ch.restart_players()
     new_score = ch.get_score()
