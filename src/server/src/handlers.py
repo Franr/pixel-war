@@ -76,6 +76,8 @@ class CreaturesHandler:
             self.pw_map.base_position(j)
         return players
 
+    def get_enemies(self, team: int):
+        return [p for p in self.jugadores.values() if p.team != team]
 
 
 class ShootsHandler:
