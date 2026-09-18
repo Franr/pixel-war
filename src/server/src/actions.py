@@ -1,5 +1,3 @@
-from collections.abc import Callable
-
 from shared.constants import Direction, Team
 
 from .entidades import Jugador
@@ -10,7 +8,7 @@ from .exceptions import (
     InvalidMovementDirection,
     InvalidShootDirection,
 )
-from .handlers import BulletHandler, CreaturesHandler
+from .handlers import CreaturesHandler, ShootsHandler, ShootTrajectory
 from .logger import logger
 from .mapa import Mapa
 
@@ -26,7 +24,7 @@ def create_player(team: int, ch: CreaturesHandler) -> tuple[Jugador, list[Jugado
     return player, other_players, score, ch.get_map()
 
 
-def move_player(uid: int, direction: str, ch: CreaturesHandler):
+def move_player(uid: int, direction: str, ch: CreaturesHandler) -> Jugador:
     jug = ch.get_creature_by_uid(uid)
 
     if not Direction.validate_2(direction):
@@ -50,7 +48,7 @@ def move_player(uid: int, direction: str, ch: CreaturesHandler):
     return teleport_player(uid, x, y, ch)
 
 
-def teleport_player(uid: int, x: int, y:int , ch: CreaturesHandler):
+def teleport_player(uid: int, x: int, y:int , ch: CreaturesHandler) -> Jugador:
     jug = ch.get_creature_by_uid(uid)
     pw_map = ch.get_map()
     if pw_map.pos_is_blocked(x, y):
@@ -60,14 +58,14 @@ def teleport_player(uid: int, x: int, y:int , ch: CreaturesHandler):
     return jug
 
 
-def shoot_action(uid: int, direction: str, ch: CreaturesHandler, hit_callback: Callable, die_callback: Callable):
+def shoot_action(uid: int, direction: str, sh: ShootsHandler) -> ShootTrajectory:
     if not Direction.validate_4(direction):
         raise InvalidShootDirection
 
-    jug = ch.get_creature_by_uid(uid)
+    jug = sh.ch.get_creature_by_uid(uid)
 
     if jug.is_live() and not jug.cant_shot():
-        return BulletHandler(jug, direction, ch, hit_callback, die_callback)
+        return sh.add_shot(jug, direction)
     else:
         raise CantShoot
 
@@ -77,7 +75,7 @@ def revive_player(uid: int, ch: CreaturesHandler):
     jug.revive()
 
 
-def increase_score(uid: int, ch: CreaturesHandler):
+def increase_score(uid: int, ch: CreaturesHandler) -> tuple[int, int]:
     jug = ch.get_creature_by_uid(uid)
     if jug.team == Team.BLUE:
         ch.score.murio_azul()
@@ -86,8 +84,7 @@ def increase_score(uid: int, ch: CreaturesHandler):
     return ch.score.get_data()
 
 
-def restart_round(uid: int, ch: CreaturesHandler):
-    ch.get_creature_by_uid(uid)
+def restart_round(ch: CreaturesHandler):
     ch.score.restart()
     new_players = ch.restart_players()
     new_score = ch.get_score()

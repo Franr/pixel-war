@@ -22,7 +22,7 @@ from src.exceptions import (
     PlayerDoesNotExist,
     RespawnFull,
 )
-from src.handlers import CreaturesHandler
+from src.handlers import CreaturesHandler, ShootsHandler
 from src.mapa import Mapa
 from src.score import Score
 
@@ -37,6 +37,7 @@ class ActionsTest(TestCase):
         self.pw_map = Mapa("test")
         self.score = Score()
         self.ch = CreaturesHandler()
+        self.sh = ShootsHandler(self.ch, callback, callback)
         self.ch.jugadores = {}
         self.ch.pw_map = self.pw_map
         self.ch.score = self.score
@@ -120,10 +121,8 @@ class ActionsTest(TestCase):
     def test_shoot_directions(self):
         player, _, _, _ = create_player(Team.BLUE, self.ch)
         for d in (Direction.NORTH, Direction.SOUTH, Direction.WEST, Direction.EAST, Direction.NORTH_WEST, Direction.NORTH_EAST, Direction.SOUTH_WEST, Direction.SOUTH_EAST):
-            bullet_handler = shoot_action(
-                player.get_uid(), d, self.ch, callback, callback
-            )
-            self.assertIsNotNone(bullet_handler)
+            shoot_handler = shoot_action(player.get_uid(), d, self.sh)
+            self.assertIsNotNone(shoot_handler)
 
     def test_shoot_bad_direction(self):
         player, _, _, _ = create_player(Team.BLUE, self.ch)
@@ -132,21 +131,19 @@ class ActionsTest(TestCase):
             shoot_action,
             player.get_uid(),
             "bad_dir",
-            self.ch,
-            None,
-            None,
+            self.sh
         )
 
     def test_shoot_update(self):
         player, _, _, _ = create_player(Team.BLUE, self.ch)
-        shoot_handler = shoot_action(player.get_uid(), Direction.NORTH, self.ch, callback, callback)
+        shoot_handler = shoot_action(player.get_uid(), Direction.NORTH, self.sh)
         before_y = shoot_handler.bala.y
         shoot_handler.loop()
         self.assertEqual(before_y - 1, shoot_handler.bala.y)
 
     def test_shoot_hit_wall(self):
         player, _, _, _ = create_player(Team.BLUE, self.ch)
-        shoot_handler = shoot_action(player.get_uid(), Direction.WEST, self.ch, callback, callback)
+        shoot_handler = shoot_action(player.get_uid(), Direction.WEST, self.sh)
         for _ in range(3):
             self.assertTrue(shoot_handler.update())
         self.assertFalse(shoot_handler.update())
@@ -155,7 +152,7 @@ class ActionsTest(TestCase):
         player1, _, _, pw_map = create_player(Team.BLUE, self.ch)
         player2, _, _, pw_map = create_player(Team.BLUE, self.ch)
         pw_map.move_player(player2, player1.x + 2, player1.y)
-        shoot_handler = shoot_action(player1.get_uid(), Direction.EAST, self.ch, callback, callback)
+        shoot_handler = shoot_action(player1.get_uid(), Direction.EAST, self.sh)
         for _ in range(3):
             self.assertTrue(shoot_handler.update())
 
@@ -163,7 +160,7 @@ class ActionsTest(TestCase):
         player1, _, _, pw_map = create_player(Team.BLUE, self.ch)
         player2, _, _, pw_map = create_player(Team.RED, self.ch)
         pw_map.move_player(player2, player1.x + 2, player1.y)
-        shoot_handler = shoot_action(player1.get_uid(), Direction.EAST, self.ch, callback, callback)
+        shoot_handler = shoot_action(player1.get_uid(), Direction.EAST, self.sh)
         health_before = player2.vida
         self.assertTrue(shoot_handler.update())  # move 1 sqm
         self.assertFalse(shoot_handler.update())  # hit the enemy
@@ -172,17 +169,13 @@ class ActionsTest(TestCase):
     def test_cant_shoot_exception(self):
         player1, _, _, _ = create_player(Team.BLUE, self.ch)
         player1.vivo = False
-        self.assertRaises(
-            CantShoot, shoot_action, player1.get_uid(), Direction.EAST, self.ch, callback, callback
-        )
+        self.assertRaises(CantShoot, shoot_action, player1.get_uid(), Direction.EAST, self.sh)
 
     def test_kill_and_revive_enemy(self):
         player1, _, _, pw_map = create_player(Team.BLUE, self.ch)
         player2, _, _, pw_map = create_player(Team.RED, self.ch)
         pw_map.move_player(player2, player1.x + 1, player1.y)
-        shoot_handler = shoot_action(
-            player1.get_uid(), Direction.EAST, self.ch, callback, callback
-        )
+        shoot_handler = shoot_action(player1.get_uid(), Direction.EAST, self.sh)
         player2.vida = 1
         shoot_handler.loop()
         self.assertFalse(player2.vivo)
@@ -198,9 +191,10 @@ class ActionsTest(TestCase):
             return increase_score(uid, self.ch)
 
         pw_map.move_player(player2, player1.x + 1, player1.y)
-        shoot_handler = shoot_action(
-            player1.get_uid(), Direction.EAST, self.ch, callback, die_callback
-        )
+
+        with patch.object(self.sh, "die_callback", die_callback):
+            shoot_handler = shoot_action(player1.get_uid(), Direction.EAST, self.sh)
+
         player2.vida = 1
         self.assertEqual(self.score.blue_score, 0)
         shoot_handler.loop()
@@ -214,21 +208,19 @@ class ActionsTest(TestCase):
             return increase_score(uid, self.ch)
 
         pw_map.move_player(player2, player1.x + 1, player1.y)
-        shoot_handler = shoot_action(
-            player1.get_uid(), Direction.EAST, self.ch, callback, die_callback
-        )
+
+        with patch.object(self.sh, "die_callback", die_callback):
+            shoot_handler = shoot_action(player1.get_uid(), Direction.EAST, self.sh)
+
         player2.vida = 1
         self.assertEqual(self.score.red_score, 0)
         shoot_handler.loop()
         self.assertEqual(self.score.red_score, 1)
 
     def test_restart_round(self):
-        # wrong player trying to restart
-        self.assertRaises(PlayerDoesNotExist, restart_round, -1, self.ch)
-
-        # real case
         player1, _, _, pw_map = create_player(Team.BLUE, self.ch)
         player2, _, _, pw_map = create_player(Team.RED, self.ch)
+
         # move both one place
         teleport_player(player1.uid, player1.x + 1, player1.y + 1, self.ch)
         teleport_player(player2.uid, player2.x + 1, player2.y + 1, self.ch)
@@ -239,8 +231,8 @@ class ActionsTest(TestCase):
         self.score.murio_azul()
         self.score.murio_rojo()
         # restart
-        players, new_score = restart_round(player1.uid, self.ch)
-        
+        players, new_score = restart_round(self.ch)
+
         # base positions
         players = list(players)
         player_blue = players.pop(0) if players[0].team == Team.BLUE else players.pop()
