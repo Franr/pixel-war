@@ -2,6 +2,7 @@ import logging
 from types import MappingProxyType
 
 from rich.text import Text
+from shared.constants import Team
 from textual import on
 from textual.app import App, ComposeResult
 from textual.containers import Vertical
@@ -116,6 +117,12 @@ class Tui(App):
         yield RichLog(id="log_view", highlight=True, classes="box")
         with Vertical(classes="box"):
             yield Button(id="restart_button", label="Restart Round")
+            yield Button(id="remove_all", label="Remove all bots")
+        with Vertical(classes="box"):
+            yield Button(id="add_bot_blue", label="Add bot: blue")
+            yield Button(id="add_bot_red", label="Add bot: red")
+            yield Button(id="remove_bot_blue", label="Remove bot: blue")
+            yield Button(id="remove_bot_red", label="Remove bot: red")
         yield MatrixWidget(self.gh.pw_map.array_map, classes="box")
         yield Footer()
 
@@ -129,6 +136,31 @@ class Tui(App):
     def pressed_restart_button(self, event: Button.Pressed) -> None:
         """Pressed the restart button."""
         self.gh.restart_round()
+
+    @on(Button.Pressed, "#add_bot_blue")
+    def pressed_add_blue(self, event: Button.Pressed) -> None:
+        """Pressed the restart button."""
+        self.gh.add_bot(Team.BLUE)
+
+    @on(Button.Pressed, "#add_bot_red")
+    def pressed_add_red(self, event: Button.Pressed) -> None:
+        """Pressed the restart button."""
+        self.gh.add_bot(Team.RED)
+
+    @on(Button.Pressed, "#remove_bot_blue")
+    def pressed_remove_blue(self, event: Button.Pressed) -> None:
+        """Pressed the restart button."""
+        self.gh.remove_bot(Team.BLUE)
+
+    @on(Button.Pressed, "#remove_bot_red")
+    def pressed_remove_red(self, event: Button.Pressed) -> None:
+        """Pressed the restart button."""
+        self.gh.remove_bot(Team.RED)
+
+    @on(Button.Pressed, "#remove_all")
+    def pressed_remove_all(self, event: Button.Pressed) -> None:
+        """Pressed the restart button."""
+        self.gh.remove_all_bots()
 
     def __init__(self, gh: GameHandler, **kwargs):
         super().__init__(**kwargs)

@@ -56,7 +56,7 @@ class GameHandler:
         self.ch.score = self.score
         self.peers: dict[tuple[str, int], int] = {}
         self.server = server
-        self.bots = {Team.BLUE: {}, Team.RED: {}}
+        self.bots: dict[int, dict[int, Bot]] = {Team.BLUE: {}, Team.RED: {}}
 
     def command_dispatcher(self, client: "Connection", command: str, payload: dict):
         if command != Login.action and self.peers[client.address] == self.INVALID_UID_PLAYER:
@@ -155,3 +155,38 @@ class GameHandler:
         self.broadcast(PlayerLogout(uid=uid))
 
         return uid
+
+    def add_bot(self, team: int):
+        try:
+            # create bot
+            bot, _, _, _ = create_player(team, self.ch)
+        except RespawnFull:
+            logger.warning("[AddBot] Respawn Full. Try again later...")
+            return
+
+        # let all player knows
+        self.broadcast(CreateObject(obj_data=bot.get_data(), correlation_id="__BOT__"))
+
+        self.bots[team][bot.uid] = Bot(bot, self)
+
+    def remove_bot(self, team: int):
+        if not len(self.bots[team]):
+            logger.info(f"[RemoveBot] No bots for color {team}. Ignoring.")
+
+        uid , bot = self.bots[team].popitem()
+        bot.online = False
+        self.ch.del_creature_by_uid(uid)
+        self.broadcast(PlayerLogout(uid=uid))
+
+        return uid
+
+    def remove_all_bots(self):
+        for t in Team.BLUE, Team.RED:
+            # TODO: walrus operator?
+            for uid, bot in self.bots[t].items():
+                bot.online = False
+                self.ch.del_creature_by_uid(uid)
+                self.broadcast(PlayerLogout(uid=uid))
+            self.bots[t] = {}
+    
+        return True

@@ -1,7 +1,7 @@
 import time
 from contextlib import contextmanager
 from random import randint
-from typing import final
+from typing import ClassVar, final
 
 from shared.constants import Direction
 
@@ -114,6 +114,12 @@ class Jugador(Criatura):
 
 
 class Bala(BaseObjet):
+    MOVES: ClassVar = {
+        Direction.NORTH: ( 0, -1),
+        Direction.SOUTH: ( 0,  1),
+        Direction.EAST:  ( 1,  0),
+        Direction.WEST:  (-1,  0),
+    }
 
     def __init__(self, player_id: int, x: int, y: int, direction: str, equipo: int):
         super().__init__(randint(100000, 999999), x, y)
@@ -122,13 +128,20 @@ class Bala(BaseObjet):
         self.equipo: int = equipo
         self.dx: int = 0
         self.dy: int = 0
-        for d in direction:
+        for d in direction:  # diagonal shots have 2 letters
             self.calc_desplazamiento(d)
 
     def is_team(self, equipo: int) -> bool:
         return self.equipo == equipo
 
+    def next_pos(self):
+        # generate a vector for each individual direction and sum them
+        mx, my = tuple(map(sum, zip(*[self.MOVES[d] for d in self.direction])))       
+
+        return (self.x + mx, self.y + my), (mx, my)
+
     def calc_desplazamiento(self, direction: str):
+        # TODO: use next_pos()
         if direction == Direction.NORTH:
             self.dy = -1
         elif direction == Direction.SOUTH:
