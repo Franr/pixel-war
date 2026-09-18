@@ -102,7 +102,6 @@ class Connection(MessageProtocol):
             return
 
         self.clients.pop(self.address)
-        # TODO: move these 3 into game handler
         uid = self.gh.logout(self.address)
         logger.info(f"[SERVER] Client disconnected: {self.address} - Player ID: {uid}")
 
