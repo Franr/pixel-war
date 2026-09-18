@@ -77,24 +77,43 @@ class CreaturesHandler:
         return players
 
 
-class BulletHandler:
+
+class ShootsHandler:
+
+    def __init__(self, ch: CreaturesHandler, hit_callback: Callable, die_callback: Callable) -> None:
+        self.ch = ch
+        self.shoots = {}
+        self.hit_callback = hit_callback
+        self.die_callback = die_callback
+
+    def add_shot(self, player, direction):
+        bala = Bala(player.uid, player.x, player.y, direction, player.get_team())
+        player.block_shot()
+        self.shoots[bala.uid] = bala
+
+        return ShootTrajectory(self.shoots, bala, self.ch, self.hit_callback, self.die_callback)
+
+
+class ShootTrajectory:
     DELAY = 0.05
     DMG = 5
 
-    def __init__(self, jug: Jugador, direction: str, ch: CreaturesHandler, hit_callback: Callable, die_callback: Callable):
-        self.bala = Bala(jug.uid, jug.x, jug.y, direction, jug.get_team())
+    def __init__(self, shoots: dict, bala: Bala, ch: CreaturesHandler, hit_callback: Callable, die_callback: Callable):
+        self.shoots = shoots
+        self.bala = bala
         self.hit_callback = hit_callback
         self.die_callback = die_callback
         self.ch = ch
         self.mapa = self.ch.get_map()
-        self.jug = jug
-        self.jug.block_shot()
 
-        asyncio.get_event_loop().call_later(self.DELAY, self.loop)
+        asyncio.get_event_loop().call_later(self.DELAY, self.loop)  # TODO: get_running_loop?
 
     def loop(self):
         if self.update():
             asyncio.get_event_loop().call_later(self.DELAY, self.loop)
+        else:
+            # remove from memory once it hit something
+            self.shoots.pop(self.bala.uid)
 
     def update(self):
         # proximo movimiento
@@ -104,14 +123,14 @@ class BulletHandler:
         mid = self.mapa.get_id_by_pos(x, y)  # mid = map id
 
         # hit nothing or its owner
-        if mid in (0, self.bala.get_uid()):
+        if mid in (0, self.bala.player_id):
             self.bala.mover()
-            logger.debug(f"[Bullet] Player: {self.jug.uid} - Moved to: {self.bala.direction} - Spot: [{x} {y} / {mid}]")
+            logger.debug(f"[Bullet] Player: {self.bala.player_id} - Moved to: {self.bala.direction} - Spot: [{x} {y} / {mid}]")
             return True
 
         # hit a block
         if mid == 1:
-            logger.debug(f"[Bullet] Player: {self.jug.uid} - Hit block.")
+            logger.debug(f"[Bullet] Player: {self.bala.player_id} - Hit block.")
             return False
         else:
             # hit a creature
@@ -120,11 +139,11 @@ class BulletHandler:
             # same team
             if self.bala.is_team(c.get_team()):
                 self.bala.mover()
-                logger.debug(f"[Bullet] Player: {self.jug.uid} - Hit same team player: {mid}. Keep moving.")
+                logger.debug(f"[Bullet] Player: {self.bala.player_id} - Hit same team player: {mid}. Keep moving.")
                 return True
             # enemy
             else:
-                logger.debug(f"[Bullet] Player: {self.jug.uid} - Hit enemy: {mid}.")
+                logger.debug(f"[Bullet] Player: {self.bala.player_id} - Hit enemy: {mid}.")
                 if c.is_live():
                     if c.hit(self.DMG):
                         self.die_callback(mid)

@@ -14,6 +14,9 @@ from shared.commands import (
     ServerError,
     UpdateScore,
 )
+from shared.constants import Team
+
+from src.bot import Bot
 
 if TYPE_CHECKING:
     from .server import Connection, ServerHandler
@@ -34,7 +37,7 @@ from .exceptions import (
     PlayerDoesNotExist,
     RespawnFull,
 )
-from .handlers import BulletHandler, CreaturesHandler
+from .handlers import CreaturesHandler, ShootsHandler, ShootTrajectory
 from .logger import logger
 from .mapa import Mapa
 from .score import Score
@@ -48,10 +51,12 @@ class GameHandler:
         self.pw_map = Mapa("mapa")
         self.score = Score()
         self.ch = CreaturesHandler()
+        self.sh = ShootsHandler(self.ch, self._hit_callback, self._die_callback)
         self.ch.pw_map = self.pw_map  # TODO: move as CreaturesHandler argument
         self.ch.score = self.score
         self.peers: dict[tuple[str, int], int] = {}
         self.server = server
+        self.bots = {Team.BLUE: {}, Team.RED: {}}
 
     def command_dispatcher(self, client: "Connection", command: str, payload: dict):
         if command != Login.action and self.peers[client.address] == self.INVALID_UID_PLAYER:
@@ -101,11 +106,11 @@ class GameHandler:
 
     def shoot(self, client: "Connection", uid: int, direction: str) -> bool:
         try:
-            bh: BulletHandler = shoot_action(uid, direction, self.ch, self._hit_callback, self._die_callback)
+            bh: ShootTrajectory = shoot_action(uid, direction, self.sh)
         except (CantShoot, PlayerDoesNotExist):
             return False
         else:
-            self.broadcast(PlayerShoot(uid=uid, direction=direction, x=bh.jug.x, y=bh.jug.y))
+            self.broadcast(PlayerShoot(uid=uid, direction=direction, x=bh.bala.x, y=bh.bala.y))
 
         return True
 

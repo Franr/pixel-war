@@ -1,5 +1,6 @@
 import time
 from contextlib import contextmanager
+from random import randint
 from typing import final
 
 from shared.constants import Direction
@@ -26,6 +27,7 @@ class TemporalContextLock:
 
     def is_locked(self):
         return time.monotonic() - self.last_executed < self.cooldown
+
 
 class BaseObjet:
     """ Clase base para todos los objetos (visibles) del juego """
@@ -113,9 +115,9 @@ class Jugador(Criatura):
 
 class Bala(BaseObjet):
 
-
-    def __init__(self, uid: int, x: int, y: int, direction: str, equipo: int):
-        super().__init__(uid, x, y)
+    def __init__(self, player_id: int, x: int, y: int, direction: str, equipo: int):
+        super().__init__(randint(100000, 999999), x, y)
+        self.player_id = player_id
         self.direction: str = direction
         self.equipo: int = equipo
         self.dx: int = 0
