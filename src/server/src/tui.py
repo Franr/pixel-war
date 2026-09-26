@@ -120,10 +120,10 @@ class Tui(App):
             yield Button(id="add_bot_blue", label="Add bot: blue")
             yield Button(id="add_bot_red", label="Add bot: red")
         with RadioSet(id="log_level", classes="box"):
-            yield Label("Log Level")
-            yield RadioButton("Debug")
-            yield RadioButton("Info", value=True)
-            yield RadioButton("Warning")
+            yield Label("Log Level:\n")
+            yield RadioButton("DEBUG")
+            yield RadioButton("INFO", value=True)
+            yield RadioButton("WARNING")
         yield MatrixWidget(self.gh.pw_map.array_map, classes="box")
 
     def on_mount(self) -> None:
@@ -133,7 +133,7 @@ class Tui(App):
         logger.addHandler(handler)
 
     def on_radio_set_changed(self, event: RadioSet.Changed) -> None:
-        logger.setLevel((event.radio_set.pressed_index + 1) * 10)
+        logger.setLevel(str(event.pressed.label))
 
     @on(Button.Pressed, "#restart_button")
     def pressed_restart_button(self, event: Button.Pressed) -> None:
