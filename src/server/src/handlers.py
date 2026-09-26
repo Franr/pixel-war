@@ -22,7 +22,7 @@ def id_generator() -> Generator[int]:
 
 class CreaturesHandler:
 
-    VIDA_MAX = 100
+    VIDA_MAX = 10
     pw_map: Mapa
     score: Score
 
