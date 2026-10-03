@@ -116,7 +116,7 @@ class GameHandler:
 
     def restart_round(self) -> bool:
         """
-        Player requested to restart the round.
+        Restart the round.
         """
         try:
             players, new_score = restart_round(self.ch)
@@ -128,6 +128,7 @@ class GameHandler:
                 self.broadcast(MoveObject(uid=p.uid, x=p.x, y=p.y))
                 self.broadcast(PlayerRevive(uid=p.uid))
 
+        logger.info("[RestartRound] Round restarted.")
         return True
 
     def _hit_callback(self, uid: int, damage: int) -> bool:
@@ -146,6 +147,7 @@ class GameHandler:
         revive_player(uid, self.ch)
         self.broadcast(PlayerRevive(uid=uid))
         self.broadcast(UpdateScore(blue=score[0], red=score[1]))
+        logger.info(f"Score updated: Blue {score[0]} - Red {score[1]}")
 
         return True
 
@@ -156,31 +158,35 @@ class GameHandler:
 
         return uid
 
-    def add_bot(self, team: int):
+    def add_bot(self, team: int) -> int:
         try:
             # create bot
             bot, _, _, _ = create_player(team, self.ch)
         except RespawnFull:
             logger.warning("[AddBot] Respawn Full. Try again later...")
-            return
+            return self.INVALID_UID_PLAYER
 
         # let all player knows
         self.broadcast(CreateObject(obj_data=bot.get_data(), correlation_id="__BOT__"))
-
         self.bots[team][bot.uid] = Bot(bot, self)
+        logger.info(f"[AddBot] Bot for color {team} added.")
 
-    def remove_bot(self, team: int):
+        return bot.uid
+
+    def remove_bot(self, team: int) -> int:
         if not len(self.bots[team]):
-            logger.info(f"[RemoveBot] No bots for color {team}. Ignoring.")
+            logger.info(f"[RemoveBot] No bots for color {team} found. Ignoring.")
+            return self.INVALID_UID_PLAYER
 
         uid , bot = self.bots[team].popitem()
         bot.online = False
         self.ch.del_creature_by_uid(uid)
         self.broadcast(PlayerLogout(uid=uid))
+        logger.info(f"[RemoveBot] Bot for color {team} removed.")
 
         return uid
 
-    def remove_all_bots(self):
+    def remove_all_bots(self) -> bool:
         for t in Team.BLUE, Team.RED:
             # TODO: walrus operator?
             for uid, bot in self.bots[t].items():
@@ -188,5 +194,6 @@ class GameHandler:
                 self.ch.del_creature_by_uid(uid)
                 self.broadcast(PlayerLogout(uid=uid))
             self.bots[t] = {}
-    
+
+        logger.info("[RemoveAllBots] All bots removed.")
         return True

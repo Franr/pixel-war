@@ -7,7 +7,7 @@ from textual import on
 from textual.app import App, ComposeResult
 from textual.containers import Vertical
 from textual.widget import Widget
-from textual.widgets import Button, Footer, Header, RichLog
+from textual.widgets import Button, Header, Label, RadioButton, RadioSet, RichLog
 
 from src.game import GameHandler
 from src.logger import logger
@@ -101,7 +101,6 @@ class Tui(App):
         grid-columns: 1fr;
     }
     .box {
-        height: 100%;
         width: 1fr;
     }
     #log_view {
@@ -117,20 +116,24 @@ class Tui(App):
         yield RichLog(id="log_view", highlight=True, classes="box")
         with Vertical(classes="box"):
             yield Button(id="restart_button", label="Restart Round")
-            yield Button(id="remove_all", label="Remove all bots")
-        with Vertical(classes="box"):
+            yield Button(id="remove_bots", label="Remove bots")
             yield Button(id="add_bot_blue", label="Add bot: blue")
             yield Button(id="add_bot_red", label="Add bot: red")
-            yield Button(id="remove_bot_blue", label="Remove bot: blue")
-            yield Button(id="remove_bot_red", label="Remove bot: red")
+        with RadioSet(id="log_level", classes="box"):
+            yield Label("Log Level:\n")
+            yield RadioButton("DEBUG")
+            yield RadioButton("INFO", value=True)
+            yield RadioButton("WARNING")
         yield MatrixWidget(self.gh.pw_map.array_map, classes="box")
-        yield Footer()
 
     def on_mount(self) -> None:
         log_widget = self.query_one("#log_view", RichLog)
         # Attach custom handler to our logger
         handler = TextualLogHandler(log_widget)
         logger.addHandler(handler)
+
+    def on_radio_set_changed(self, event: RadioSet.Changed) -> None:
+        logger.setLevel(str(event.pressed.label))
 
     @on(Button.Pressed, "#restart_button")
     def pressed_restart_button(self, event: Button.Pressed) -> None:
@@ -147,17 +150,7 @@ class Tui(App):
         """Pressed the restart button."""
         self.gh.add_bot(Team.RED)
 
-    @on(Button.Pressed, "#remove_bot_blue")
-    def pressed_remove_blue(self, event: Button.Pressed) -> None:
-        """Pressed the restart button."""
-        self.gh.remove_bot(Team.BLUE)
-
-    @on(Button.Pressed, "#remove_bot_red")
-    def pressed_remove_red(self, event: Button.Pressed) -> None:
-        """Pressed the restart button."""
-        self.gh.remove_bot(Team.RED)
-
-    @on(Button.Pressed, "#remove_all")
+    @on(Button.Pressed, "#remove_bots")
     def pressed_remove_all(self, event: Button.Pressed) -> None:
         """Pressed the restart button."""
         self.gh.remove_all_bots()

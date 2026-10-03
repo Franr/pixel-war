@@ -1,7 +1,7 @@
 import logging
 
 logging.basicConfig(
-    level=logging.DEBUG,
+    level=logging.INFO,
     force=True,
 )
 logger = logging.getLogger()
