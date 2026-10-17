@@ -52,7 +52,7 @@ class ActionsTest(TestCase):
 
     def test_player_get_data(self):
         player, _, _, _ = create_player(Team.BLUE, self.ch)
-        self.assertEqual(player.get_data(), [2, 1, 34, 2, 100, 100])
+        self.assertEqual(player.get_data(), [2, 1, 34, 2, CreaturesHandler.VIDA_MAX, CreaturesHandler.VIDA_MAX])
 
     def test_wrong_player_uid(self):
         self.assertRaises(PlayerDoesNotExist, self.ch.get_creature_by_uid, 157)

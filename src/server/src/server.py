@@ -25,6 +25,16 @@ class ServerHandler:
         for client in self.clients.values():
             client.send_message(message)
 
+    def close_client_connections(self):
+        """
+        Close all active client connections cleanly
+        """
+        logger.info("Cleaning up connections...")
+        for address, client in self.clients.items():
+            logger.debug(f"Disconnecting {address}")
+            client.transport.close()
+        self.clients.clear()
+
     async def start(self):
         loop = asyncio.get_running_loop()
         self.async_server = await loop.create_server(
@@ -38,11 +48,7 @@ class ServerHandler:
     async def stop(self):
         logger.info("Initiating graceful server shutdown...")
 
-        # Close all active client connections cleanly
-        for client in self.clients.values():
-            client.transport.close()
-        self.clients.clear()
-
+        self.close_client_connections()
         # Stop accepting new connections and close the server socket
         self.async_server.close()
         await self.async_server.wait_closed()
