@@ -88,8 +88,3 @@ class Shoot(Command):
     uid: int
     direction: str
     action: str = "shoot"
-
-@dataclass
-class RestartRound(Command):
-    uid: int
-    action: str = "restart_round"

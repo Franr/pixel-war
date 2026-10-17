@@ -9,8 +9,8 @@ from textual.containers import Vertical
 from textual.widget import Widget
 from textual.widgets import Button, Header, Label, RadioButton, RadioSet, RichLog
 
-from src.game import GameHandler
 from src.logger import logger
+from src.server import ServerHandler
 
 
 class MatrixWidget(Widget):
@@ -132,6 +132,10 @@ class Tui(App):
         handler = TextualLogHandler(log_widget)
         logger.addHandler(handler)
 
+    def on_unmount(self) -> None:
+        # Runs right before the app shuts down
+        self.sh.close_client_connections()
+
     def on_radio_set_changed(self, event: RadioSet.Changed) -> None:
         logger.setLevel(str(event.pressed.label))
 
@@ -155,6 +159,7 @@ class Tui(App):
         """Pressed the restart button."""
         self.gh.remove_all_bots()
 
-    def __init__(self, gh: GameHandler, **kwargs):
+    def __init__(self, sh: ServerHandler, **kwargs):
         super().__init__(**kwargs)
-        self.gh = gh
+        self.sh = sh
+        self.gh = sh.gh

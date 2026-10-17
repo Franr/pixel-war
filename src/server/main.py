@@ -14,7 +14,7 @@ async def run_server():
     sh = ServerHandler()
     asyncio.create_task(sh.run())
     # start the frontend
-    app = Tui(sh.gh)
+    app = Tui(sh)
     # run Textual within the EXISTING event loop
     await app.run_async()
 
