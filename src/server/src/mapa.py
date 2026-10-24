@@ -92,7 +92,7 @@ class Mapa:
         else:
             return self.x_azul, self.y_azul
 
-    def base_position(self, jugador: Jugador) -> Jugador:
+    def place_in_base_position(self, jugador: Jugador) -> Jugador:
         pos = None
         if jugador.get_team() == Team.BLUE:
             pos = self.get_blue()
@@ -103,7 +103,7 @@ class Mapa:
 
         x, y = pos
         self.set_object(jugador, x, y)
-        jugador.mover(x, y)
+        jugador.set_coor(x, y)
 
         return jugador
 
@@ -131,7 +131,7 @@ class Mapa:
         logger.warning(f"No empty position found for coordinates x:{x} y:{y}")
         raise RespawnFull
 
-    def move_player(self, jugador, x, y):
+    def move_player(self, jugador: Jugador, x: int, y: int):
         antx, anty = jugador.get_coor()
         jugador.mover(x, y)
         self.clean_coor(antx, anty)

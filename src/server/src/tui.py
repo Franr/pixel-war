@@ -10,7 +10,7 @@ from textual.widget import Widget
 from textual.widgets import Button, Header, Label, RadioButton, RadioSet, RichLog
 
 from src.logger import logger
-from src.server import ServerHandler
+from src.server import TcpServerHandler
 
 
 class MatrixWidget(Widget):
@@ -159,7 +159,7 @@ class Tui(App):
         """Pressed the restart button."""
         self.gh.remove_all_bots()
 
-    def __init__(self, sh: ServerHandler, **kwargs):
+    def __init__(self, sh: TcpServerHandler, **kwargs):
         super().__init__(**kwargs)
         self.sh = sh
         self.gh = sh.gh

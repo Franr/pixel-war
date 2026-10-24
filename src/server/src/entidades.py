@@ -103,6 +103,7 @@ class Jugador(Criatura):
             pass
 
     def cant_move(self):
+        # TODO: rely in the guard() value instead?
         return self._movement_lock.is_locked()
 
     def cant_shot(self):

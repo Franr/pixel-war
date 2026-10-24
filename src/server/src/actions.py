@@ -70,10 +70,13 @@ def shoot_action(uid: int, direction: str, sh: ShootsHandler) -> ShootTrajectory
         raise CantShoot
 
 
-def revive_player(uid: int, ch: CreaturesHandler):
+def revive_player(uid: int, ch: CreaturesHandler) -> Jugador:
     jug = ch.get_creature_by_uid(uid)
     jug.revive()
+    ch.pw_map.clean_coor(jug.x, jug.y)
+    ch.pw_map.place_in_base_position(jug)
 
+    return jug
 
 def increase_score(uid: int, ch: CreaturesHandler) -> tuple[int, int]:
     jug = ch.get_creature_by_uid(uid)

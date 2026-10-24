@@ -19,7 +19,7 @@ from shared.constants import Team
 from src.bot import Bot
 
 if TYPE_CHECKING:
-    from .server import Connection, ServerHandler
+    from .server import Connection, TcpServerHandler
 
 from .actions import (
     create_player,
@@ -47,7 +47,7 @@ class GameHandler:
 
     INVALID_UID_PLAYER = -1
 
-    def __init__(self, server: "ServerHandler"):
+    def __init__(self, server: "TcpServerHandler"):
         self.pw_map = Mapa("mapa")
         self.score = Score()
         self.ch = CreaturesHandler()
@@ -59,22 +59,27 @@ class GameHandler:
         self.bots: dict[int, dict[int, Bot]] = {Team.BLUE: {}, Team.RED: {}}
 
     def command_dispatcher(self, client: "Connection", command: str, payload: dict):
-        if command != Login.action and self.peers[client.address] == self.INVALID_UID_PLAYER:
+        uid = self.peers.get(client.address, self.INVALID_UID_PLAYER)
+        if command != Login.action and uid == self.INVALID_UID_PLAYER:
             # messages coming from a not yet logged in player, ignore them
             logger.warning(f"{client.address} sending {command}. Ignored.")
             return
 
-        return getattr(self, command)(client, **dict(payload))
+        return getattr(self, command)(client, uid, **dict(payload))
 
     def broadcast(self, cmd: Command):
         self.server.broadcast(cmd)
 
-    def login(self, client: "Connection", team: int, correlation_id: str) -> int:
-        player_uid = self.INVALID_UID_PLAYER  # replaced if the player creation is successful
+    def login(self, client: "Connection", uid: int, team: int, correlation_id: str) -> int:
+        """
+        Generate the player object and add it to the peer list.
+        INVALID_UID_PLAYER is used as uid the first time,
+        then replaced by the proper player id if login went successful.
+        """
         try:
             # create player
             player, other_players, score, pw_map = create_player(team, self.ch)
-            player_uid = player.uid
+            uid = player.uid
         except RespawnFull:
             client.send_message(ServerError(description=RespawnFull.details))
         except InvalidTeam:
@@ -90,9 +95,9 @@ class GameHandler:
             client.send_message(UpdateScore(blue=score[0], red=score[1]))
 
         # associate ip/port with uid, for the logout case
-        self.peers[client.address] = player_uid
+        self.peers[client.address] = uid
 
-        return player_uid
+        return uid
 
     def move(self, client: "Connection", uid: int, direction: str) -> bool:
         try:
@@ -144,8 +149,9 @@ class GameHandler:
         Callback when a player die: revive it and update score.
         """
         score = increase_score(uid, self.ch)
-        revive_player(uid, self.ch)
+        player = revive_player(uid, self.ch)
         self.broadcast(PlayerRevive(uid=uid))
+        self.broadcast(MoveObject(uid=uid, x=player.x, y=player.y))
         self.broadcast(UpdateScore(blue=score[0], red=score[1]))
         logger.info(f"Score updated: Blue {score[0]} - Red {score[1]}")
 
