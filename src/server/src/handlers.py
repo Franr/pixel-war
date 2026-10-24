@@ -73,7 +73,7 @@ class CreaturesHandler:
         players = self.jugadores.values()
         for j in players:
             j.revive()
-            self.pw_map.base_position(j)
+            self.pw_map.place_in_base_position(j)
         return players
 
     def get_enemies(self, team: int):

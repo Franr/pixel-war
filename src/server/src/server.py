@@ -8,7 +8,7 @@ from .game import GameHandler
 from .logger import logger
 
 
-class ServerHandler:
+class TcpServerHandler:
     """
     Manage starting and stoping server, connections and incoming/outgoing messages
     # """

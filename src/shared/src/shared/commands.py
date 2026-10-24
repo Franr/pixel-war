@@ -79,12 +79,10 @@ class Login(Command):
 
 @dataclass
 class Move(Command):
-    uid: int
     direction: str
     action: str = "move"
 
 @dataclass
 class Shoot(Command):
-    uid: int
     direction: str
     action: str = "shoot"
