@@ -4,26 +4,15 @@ import signal
 from shared.commands import Command
 from shared.protocol import MessageProtocol
 
-from .game import GameHandler
-from .logger import logger
+from ..game import GameHandler
+from ..logger import logger
+from .base import BaseConnection, BaseServerHandler
 
 
-class TcpServerHandler:
+class TcpServerHandler(BaseServerHandler):
     """
-    Manage starting and stoping server, connections and incoming/outgoing messages
-    # """
-
-    def __init__(self, host="127.0.0.1", port=8888) -> None:
-        self.host = host
-        self.port = port
-        self.clients = {}
-        self.gh = GameHandler(self)
-
-    def broadcast(self, message: Command):
-        logger.debug(f"[BrdCst ] M:{message}")
-
-        for client in self.clients.values():
-            client.send_message(message)
+    Manage starting and stopping server, connections and incoming/outgoing messages
+    """
 
     def close_client_connections(self):
         """
@@ -34,11 +23,12 @@ class TcpServerHandler:
             logger.debug(f"Disconnecting {address}")
             client.transport.close()
         self.clients.clear()
+        logger.info("Done.")
 
     async def start(self):
         loop = asyncio.get_running_loop()
         self.async_server = await loop.create_server(
-            lambda: Connection(self.clients, self.gh),
+            lambda: TCPConnection(self.clients, self.gh),
             self.host,
             self.port
         )
@@ -81,13 +71,12 @@ class TcpServerHandler:
         await self.stop()
 
 
-class Connection(MessageProtocol):
+class TCPConnection(BaseConnection, MessageProtocol):
     """
     Handles client connection. 1 instance per client connected.
     """
     def __init__(self, clients, game_handler: GameHandler):
-        super().__init__()
-        self.clients = clients  # shared with ServerHandler
+        super().__init__(clients, game_handler)
         self.gh = game_handler
 
     @property
@@ -100,7 +89,7 @@ class Connection(MessageProtocol):
 
     def connection_made(self, transport):
         super().connection_made(transport)
-        self.clients[self.address] = self
+        self.register_client()  # TODO: do it on __init__?
         logger.info(f"[SERVER] Client connected: {self.address}")
 
     def connection_lost(self, exc):
@@ -115,3 +104,6 @@ class Connection(MessageProtocol):
         action = message.pop("action")
         result = self.gh.command_dispatcher(self, action, message)
         logger.debug(f"[MsgRcvd] F:{self.address} - A:{action} - M:{message} - R:{result}]")
+
+    def send_message(self, data: Command):
+        super().send_message(data)  # provided by MessageProtocol

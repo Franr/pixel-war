@@ -19,7 +19,7 @@ from shared.constants import Team
 from src.bot import Bot
 
 if TYPE_CHECKING:
-    from .server import Connection, TcpServerHandler
+    from .server.base import BaseConnection, BaseServerHandler
 
 from .actions import (
     create_player,
@@ -47,7 +47,7 @@ class GameHandler:
 
     INVALID_UID_PLAYER = -1
 
-    def __init__(self, server: "TcpServerHandler"):
+    def __init__(self, server: "BaseServerHandler"):
         self.pw_map = Mapa("mapa")
         self.score = Score()
         self.ch = CreaturesHandler()
@@ -58,7 +58,7 @@ class GameHandler:
         self.server = server
         self.bots: dict[int, dict[int, Bot]] = {Team.BLUE: {}, Team.RED: {}}
 
-    def command_dispatcher(self, client: "Connection", command: str, payload: dict):
+    def command_dispatcher(self, client: "BaseConnection", command: str, payload: dict):
         uid = self.peers.get(client.address, self.INVALID_UID_PLAYER)
         if command != Login.action and uid == self.INVALID_UID_PLAYER:
             # messages coming from a not yet logged in player, ignore them
@@ -70,7 +70,7 @@ class GameHandler:
     def broadcast(self, cmd: Command):
         self.server.broadcast(cmd)
 
-    def login(self, client: "Connection", uid: int, team: int, correlation_id: str) -> int:
+    def login(self, client: "BaseConnection", uid: int, team: int, correlation_id: str) -> int:
         """
         Generate the player object and add it to the peer list.
         INVALID_UID_PLAYER is used as uid the first time,
@@ -99,7 +99,7 @@ class GameHandler:
 
         return uid
 
-    def move(self, client: "Connection", uid: int, direction: str) -> bool:
+    def move(self, client: "BaseConnection", uid: int, direction: str) -> bool:
         try:
             jug = move_player(uid, direction, self.ch)
         except (BlockedPosition, CantMove, PlayerDoesNotExist):
@@ -109,7 +109,7 @@ class GameHandler:
 
         return True
 
-    def shoot(self, client: "Connection", uid: int, direction: str) -> bool:
+    def shoot(self, client: "BaseConnection", uid: int, direction: str) -> bool:
         try:
             bh: ShootTrajectory = shoot_action(uid, direction, self.sh)
         except (CantShoot, PlayerDoesNotExist):
