@@ -27,7 +27,7 @@ class BaseServerHandler(ABC):
             client.send_message(message)
 
     @abstractmethod
-    def close_client_connections(self):
+    def close_server(self):
         pass
 
     @abstractmethod

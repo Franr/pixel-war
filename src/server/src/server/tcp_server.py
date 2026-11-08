@@ -47,11 +47,11 @@ class TcpServerHandler(BaseServerHandler):
 
     async def run(self):
         loop = asyncio.get_running_loop()
-        stop_event = asyncio.Event()
+        self.stop_event = asyncio.Event()
     
         def handle_signal():
             logger.info("Shutdown signal received.")
-            stop_event.set()
+            self.stop_event.set()
     
         # Attach signal handlers for graceful shutdown (Unix/Linux/macOS)
         for sig in (signal.SIGINT, signal.SIGTERM):
@@ -64,11 +64,14 @@ class TcpServerHandler(BaseServerHandler):
         server_task = asyncio.create_task(self.start())
     
         # Wait until a termination signal is triggered
-        await stop_event.wait()
+        await self.stop_event.wait()
         
         # Cancel the server loop and run cleanup
         server_task.cancel()
         await self.stop()
+
+    def close_server(self):
+        self.stop_event.set()
 
 
 class TCPConnection(BaseConnection, MessageProtocol):

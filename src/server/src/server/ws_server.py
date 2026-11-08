@@ -40,16 +40,19 @@ class WebSocketServerHandler(BaseServerHandler):
         # TODO: ConnectionClosed/exceptions handlers
         finally:
             # connection closed
-            # if not websocket.remote_address in self.clients:
-                # return
-            self.clients.pop(websocket.remote_address)
-            uid = self.gh.logout(websocket.remote_address)
+            client = self.clients.pop(websocket.remote_address, None)
+            if not client:
+                # connected but never joined the game
+                uid = self.gh.INVALID_UID_PLAYER
+            else:
+                uid = self.gh.logout(websocket.remote_address)
+
             logger.info(f"[SERVER] Client disconnected: {websocket.remote_address} - Player ID: {uid}")
 
-    def close_client_connections(self):
-        logger.info("Cleaning up connections...")
+    def close_server(self):
+        logger.info("Closing websocket server...")
         self.ws_server.close()
-        logger.info("Done.")
+        logger.info("Closed.")
 
     def dispatch(self, client, message):
         action = message.pop("action")

@@ -1,3 +1,4 @@
+import asyncio
 import logging
 from types import MappingProxyType
 
@@ -6,12 +7,20 @@ from shared.constants import Team
 from textual import on
 from textual.app import App, ComposeResult
 from textual.containers import Vertical
+from textual.types import NoActiveAppError
 from textual.widget import Widget
 from textual.widgets import Button, Header, Label, RadioButton, RadioSet, RichLog
 
+from src.game import GameHandler
 from src.logger import logger
-from src.server import TcpServerHandler
+from src.server.base import BaseServerHandler
+from src.server.tcp_server import TcpServerHandler
+from src.server.ws_server import WebSocketServerHandler
 
+SERVER_TYPES = {
+    "tcp": TcpServerHandler,
+    "web": WebSocketServerHandler
+}
 
 class MatrixWidget(Widget):
     """Renders a 2D matrix where each cell color depends on its value."""
@@ -35,9 +44,9 @@ class MatrixWidget(Widget):
     STYLE = f"{FOREGROUND} on {BACKGROUND}"
     STYLE_FLIPPED = f"{BACKGROUND} on {FOREGROUND}"
 
-    def __init__(self, map: list[list[int]], **kwargs):
+    def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self.map = map
+        self.map: list[list[int]] = [[]]
 
     def quadrant_to_char(self, tr, tl, br, bl) -> tuple[str, str]:
         values = tr > 0, tl > 0, br > 0, bl > 0
@@ -85,7 +94,10 @@ class TextualLogHandler(logging.Handler):
 
     def emit(self, record: logging.LogRecord):
         msg = self.format(record)
-        self.log_widget.write(msg)
+        try:
+            self.log_widget.write(msg)
+        except NoActiveAppError:
+            print(msg)
 
 
 class Tui(App):
@@ -96,7 +108,7 @@ class Tui(App):
     }
     Screen {
         layout: grid;
-        grid-size: 3 3;
+        grid-size: 4 3;
         grid-rows: 1fr;
         grid-columns: 1fr;
     }
@@ -105,7 +117,7 @@ class Tui(App):
     }
     #log_view {
         row-span: 2;
-        column-span: 3;
+        column-span: 4;
     }
     """
 
@@ -115,16 +127,22 @@ class Tui(App):
         yield Header(show_clock=True)
         yield RichLog(id="log_view", highlight=True, classes="box")
         with Vertical(classes="box"):
-            yield Button(id="restart_button", label="Restart Round")
-            yield Button(id="remove_bots", label="Remove bots")
-            yield Button(id="add_bot_blue", label="Add bot: blue")
-            yield Button(id="add_bot_red", label="Add bot: red")
+            yield Button(id="remove_bots", label="Remove bots", disabled=True)
+            yield Button(id="add_bot_blue", label="Add bot: blue", disabled=True)
+            yield Button(id="add_bot_red", label="Add bot: red", disabled=True)
         with RadioSet(id="log_level", classes="box"):
             yield Label("Log Level:\n")
             yield RadioButton("DEBUG")
             yield RadioButton("INFO", value=True)
             yield RadioButton("WARNING")
-        yield MatrixWidget(self.gh.pw_map.array_map, classes="box")
+        yield MatrixWidget(id="map", classes="box")
+        with RadioSet(id="server_type", classes="box"):
+            yield Label("Server Protocol:\n")
+            yield RadioButton(id="tcp", classes="server_type", label="TCP")
+            yield RadioButton(id="web", classes="server_type", label="WebSockets", value=True)
+            yield Button(id="start_server", label="Start")
+            yield Button(id="stop_server", label="Stop", disabled=True)
+            yield Button(id="restart_server", label="Restart", disabled=True)
 
     def on_mount(self) -> None:
         log_widget = self.query_one("#log_view", RichLog)
@@ -134,32 +152,81 @@ class Tui(App):
 
     def on_unmount(self) -> None:
         # Runs right before the app shuts down
-        self.sh.close_client_connections()
+        if not self.sh:
+            return        
+        self.sh.close_server()
 
     def on_radio_set_changed(self, event: RadioSet.Changed) -> None:
-        logger.setLevel(str(event.pressed.label))
+        if event.radio_set.id == "server_type":
+            pass
+        else:
+            # TODO: use to #on?
+            logger.setLevel(str(event.pressed.label))
 
-    @on(Button.Pressed, "#restart_button")
-    def pressed_restart_button(self, event: Button.Pressed) -> None:
-        """Pressed the restart button."""
+    def start_server(self, class_type: str):
+        """
+        Generate an instance of the selected server type.
+        """
+        self.sh: BaseServerHandler = SERVER_TYPES[str(class_type)]()
+        self.gh = self.sh.gh
+        self.map = self.gh.pw_map.array_map
+        self.query("#map").first().map = self.map
+        asyncio.create_task(self.sh.run())
+
+    # server buttons
+
+    @on(Button.Pressed, "#start_server")
+    def p_start(self, event: Button.Pressed) -> None:
+        class_type = self.query_one(".server_type.-on", RadioButton)
+        self.start_server(str(class_type.id))
+
+        self.query("#start_server").first().disabled = True
+        self.query("#stop_server").first().disabled = False
+        self.query("#restart_server").first().disabled = False
+        self.query("#remove_bots").first().disabled = False
+        self.query("#add_bot_blue").first().disabled = False
+        self.query("#add_bot_red").first().disabled = False
+
+    @on(Button.Pressed, "#stop_server")
+    def p_stop(self, event: Button.Pressed) -> None:
+        if not self.sh:
+            return        
+        self.sh.close_server()
+
+        self.query("#start_server").first().disabled = False
+        self.query("#stop_server").first().disabled = True
+        self.query("#restart_server").first().disabled = True
+        self.query("#remove_bots").first().disabled = True
+        self.query("#add_bot_blue").first().disabled = True
+        self.query("#add_bot_red").first().disabled = True
+
+    @on(Button.Pressed, "#restart_server")
+    def p_restart(self, event: Button.Pressed) -> None:
+        if not self.gh:
+            return
         self.gh.restart_round()
 
+    # bot buttons
+
     @on(Button.Pressed, "#add_bot_blue")
-    def pressed_add_blue(self, event: Button.Pressed) -> None:
-        """Pressed the restart button."""
+    def p_add_blue(self, event: Button.Pressed) -> None:
+        if not self.gh:
+            return
         self.gh.add_bot(Team.BLUE)
 
     @on(Button.Pressed, "#add_bot_red")
-    def pressed_add_red(self, event: Button.Pressed) -> None:
-        """Pressed the restart button."""
+    def p_add_red(self, event: Button.Pressed) -> None:
+        if not self.gh:
+            return
         self.gh.add_bot(Team.RED)
 
     @on(Button.Pressed, "#remove_bots")
-    def pressed_remove_all(self, event: Button.Pressed) -> None:
-        """Pressed the restart button."""
+    def p_remove_all(self, event: Button.Pressed) -> None:
+        if not self.gh:
+            return
         self.gh.remove_all_bots()
 
-    def __init__(self, sh: TcpServerHandler, **kwargs):
+    def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self.sh = sh
-        self.gh = sh.gh
+        self.gh: GameHandler | None = None
+        self.sh: BaseServerHandler | None = None
